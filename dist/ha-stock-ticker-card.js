@@ -1,5 +1,5 @@
 (() => {
-  const CARD_VERSION = '0.2.1';
+  const CARD_VERSION = '0.2.2';
 
   function fmtPrice(price, currency) {
     if (price === null || isNaN(price)) return '—';
@@ -406,9 +406,9 @@
         form.data = {
           name: stock.name || '',
           entity: stock.entity || '',
-          shares: stock.shares,
-          purchase_price: stock.purchase_price,
-          brokerage_fee: stock.brokerage_fee,
+          shares: stock.shares ?? null,
+          purchase_price: stock.purchase_price ?? null,
+          brokerage_fee: stock.brokerage_fee ?? null,
         };
         form.schema = STOCK_SCHEMA;
         form.computeLabel = s => s.label || s.name;

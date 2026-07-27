@@ -1,0 +1,23 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.0] - 2026-07-28
+
+### Added
+- Initial release, split out from the combined `ha-stock-ticker` repo (that
+  repo now holds the companion `ha_stock_ticker` integration only — HACS
+  doesn't allow one repository to be both an Integration and a Dashboard
+  category)
+- Displays price, change, and %change per stock, colour-coded green/down red
+- Tap a stock row to expand an intraday line chart for the day
+- Support for multiple stocks in one card, added/removed via the visual editor
+- Reads price and 5-minute intraday candles from a sensor's `meta`,
+  `timestamp`, and `indicators` attributes — works with either the
+  [ha_stock_ticker integration](https://github.com/wander00-1/ha-stock-ticker)
+  or a hand-written `rest` sensor
+- `getStubConfig` for the Lovelace card picker preview
+- HACS-compatible `hacs.json`

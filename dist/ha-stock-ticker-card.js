@@ -1,5 +1,5 @@
 (() => {
-  const CARD_VERSION = '0.1.0';
+  const CARD_VERSION = '0.2.0';
 
   function fmtPrice(price, currency) {
     if (price === null || isNaN(price)) return '—';
@@ -11,6 +11,20 @@
     if (change === null || isNaN(change)) return '';
     const sign = change > 0 ? '+' : '';
     return `${sign}${change.toFixed(3)} (${sign}${pct.toFixed(2)}%)`;
+  }
+
+  function fmtMoney(amount, currency) {
+    if (amount === null || isNaN(amount)) return '—';
+    const symbol = currency === 'AUD' ? '$' : currency ? `${currency} ` : '$';
+    const neg = amount < 0 ? '-' : '';
+    return `${neg}${symbol}${Math.abs(amount).toFixed(2)}`;
+  }
+
+  function fmtPL(amount, pct, currency) {
+    if (amount === null || isNaN(amount)) return '';
+    const sign = amount > 0 ? '+' : '';
+    const pctStr = pct !== null && !isNaN(pct) ? ` (${sign}${pct.toFixed(2)}%)` : '';
+    return `${sign}${fmtMoney(amount, currency)}${pctStr}`;
   }
 
   function buildChart(timestamps, closes, prevClose) {
@@ -71,6 +85,21 @@
     const change = (!isNaN(price) && prevClose !== undefined) ? price - prevClose : null;
     const pct = (change !== null && prevClose) ? (change / prevClose) * 100 : null;
 
+    const shares = parseFloat(stock.shares);
+    const purchasePrice = parseFloat(stock.purchase_price);
+    const brokerageFee = parseFloat(stock.brokerage_fee) || 0;
+    const hasHolding = !isNaN(shares) && shares > 0 && !isNaN(purchasePrice);
+
+    let costBasis = null, currentValue = null, plAmount = null, plPct = null;
+    if (hasHolding) {
+      costBasis = shares * purchasePrice + brokerageFee;
+      if (!isNaN(price)) {
+        currentValue = shares * price;
+        plAmount = currentValue - costBasis;
+        plPct = costBasis !== 0 ? (plAmount / costBasis) * 100 : null;
+      }
+    }
+
     return {
       available: !isNaN(price),
       symbol: stock.name || meta.symbol || stock.entity,
@@ -83,6 +112,14 @@
       timestamps,
       closes,
       asOf: meta.regularMarketTime ? new Date(meta.regularMarketTime * 1000) : null,
+      shares,
+      purchasePrice,
+      brokerageFee,
+      hasHolding,
+      costBasis,
+      currentValue,
+      plAmount,
+      plPct,
     };
   }
 
@@ -106,6 +143,15 @@
     const asOfStr = d.asOf ? d.asOf.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
     const prevCloseStr = d.prevClose !== undefined ? fmtPrice(d.prevClose, d.currency) : '';
 
+    const plDir = d.plAmount === null ? 'flat' : d.plAmount > 0 ? 'up' : d.plAmount < 0 ? 'down' : 'flat';
+    const holdingLine = d.hasHolding
+      ? `<div class="stock-holding">${d.shares} sh @ ${fmtPrice(d.purchasePrice, d.currency)}</div>
+    <div class="stock-pl ${plDir}">${fmtPL(d.plAmount, d.plPct, d.currency)}</div>`
+      : '';
+    const costBreakdown = (expanded && d.hasHolding)
+      ? `<div class="stock-chart-meta">Cost: ${fmtMoney(d.shares * d.purchasePrice, d.currency)}${d.brokerageFee ? ` + ${fmtMoney(d.brokerageFee, d.currency)} brokerage` : ''} = ${fmtMoney(d.costBasis, d.currency)} · Now: ${fmtMoney(d.currentValue, d.currency)}</div>`
+      : '';
+
     return `
 <div class="stock-row" data-index="${index}">
   <div class="stock-main">
@@ -116,12 +162,39 @@
     <div class="stock-price-block">
       <div class="stock-price">${fmtPrice(d.price, d.currency)}</div>
       <div class="stock-change ${dir}">${changeStr}</div>
+      ${holdingLine}
     </div>
   </div>
   <div class="stock-chart-wrap" style="display:${expanded ? '' : 'none'}">
     ${expanded ? buildChart(d.timestamps, d.closes, d.prevClose) : ''}
     <div class="stock-chart-meta">${asOfStr ? `As of ${asOfStr}` : ''}${prevCloseStr ? ` · Prev close ${prevCloseStr}` : ''}</div>
+    ${costBreakdown}
   </div>
+</div>`;
+  }
+
+  function buildPortfolioSummary(stocks, hass) {
+    let totalCost = 0, totalValue = 0, currency = null, count = 0;
+    stocks.forEach(s => {
+      const d = readStockData(s, hass);
+      if (d.hasHolding && d.currentValue !== null) {
+        totalCost += d.costBasis;
+        totalValue += d.currentValue;
+        currency = currency || d.currency;
+        count++;
+      }
+    });
+    if (count === 0) return '';
+
+    const pl = totalValue - totalCost;
+    const pct = totalCost !== 0 ? (pl / totalCost) * 100 : null;
+    const dir = pl > 0 ? 'up' : pl < 0 ? 'down' : 'flat';
+
+    return `
+<div class="portfolio-summary">
+  <div class="portfolio-row"><span>Invested</span><span>${fmtMoney(totalCost, currency)}</span></div>
+  <div class="portfolio-row"><span>Current value</span><span>${fmtMoney(totalValue, currency)}</span></div>
+  <div class="portfolio-row total ${dir}"><span>Movement</span><span>${fmtPL(pl, pct, currency)}</span></div>
 </div>`;
   }
 
@@ -169,6 +242,15 @@
     .stock-change.up { color: var(--stock-up-color, #2fbf4f); }
     .stock-change.down { color: var(--stock-down-color, #e64848); }
     .stock-change.flat { color: var(--secondary-text-color, #888); }
+    .stock-holding {
+      margin-top: 4px;
+      font-size: 0.72em;
+      color: var(--secondary-text-color);
+    }
+    .stock-pl { font-size: 0.8em; font-weight: 600; }
+    .stock-pl.up { color: var(--stock-up-color, #2fbf4f); }
+    .stock-pl.down { color: var(--stock-down-color, #e64848); }
+    .stock-pl.flat { color: var(--secondary-text-color, #888); }
     .stock-chart-wrap { padding: 4px 16px 14px; }
     .stock-chart-svg { width: 100%; height: 120px; display: block; }
     .chart-empty {
@@ -183,6 +265,30 @@
       color: var(--secondary-text-color);
       text-align: right;
     }
+    .portfolio-summary {
+      margin: 4px 16px 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: var(--secondary-background-color, rgba(0,0,0,0.03));
+    }
+    .portfolio-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85em;
+      color: var(--secondary-text-color);
+      padding: 2px 0;
+    }
+    .portfolio-row.total {
+      font-weight: 700;
+      font-size: 0.95em;
+      color: var(--primary-text-color);
+      border-top: 1px solid var(--divider-color, rgba(0,0,0,0.1));
+      margin-top: 4px;
+      padding-top: 6px;
+    }
+    .portfolio-row.total.up span:last-child { color: var(--stock-up-color, #2fbf4f); }
+    .portfolio-row.total.down span:last-child { color: var(--stock-down-color, #e64848); }
+    .portfolio-row.total.flat span:last-child { color: var(--secondary-text-color, #888); }
   `;
 
   // ── Editor ──────────────────────────────────────────────────────────────────
@@ -218,11 +324,15 @@
 
   const TITLE_SCHEMA = [
     { name: 'title', label: 'Card title', selector: { text: {} } },
+    { name: 'show_portfolio', label: 'Show portfolio movement summary', selector: { boolean: {} } },
   ];
 
   const STOCK_SCHEMA = [
     { name: 'name', label: 'Display name (optional, overrides symbol)', selector: { text: {} } },
     { name: 'entity', label: 'Stock price sensor', selector: { entity: { domain: 'sensor' } } },
+    { name: 'shares', label: 'Shares owned (optional)', selector: { number: { mode: 'box', min: 0, step: 'any' } } },
+    { name: 'purchase_price', label: 'Purchase price per share (optional)', selector: { number: { mode: 'box', min: 0, step: 'any' } } },
+    { name: 'brokerage_fee', label: 'Brokerage fee paid (optional)', selector: { number: { mode: 'box', min: 0, step: 'any' } } },
   ];
 
   class HaStockTickerCardEditor extends HTMLElement {
@@ -259,7 +369,10 @@
 
       const titleForm = document.createElement('ha-form');
       titleForm.hass = this._hass;
-      titleForm.data = { title: this._config.title || '' };
+      titleForm.data = {
+        title: this._config.title || '',
+        show_portfolio: this._config.show_portfolio !== false,
+      };
       titleForm.schema = TITLE_SCHEMA;
       titleForm.computeLabel = s => s.label || s.name;
       titleForm.addEventListener('value-changed', e => {
@@ -293,6 +406,9 @@
         form.data = {
           name: stock.name || '',
           entity: stock.entity || '',
+          shares: stock.shares ?? '',
+          purchase_price: stock.purchase_price ?? '',
+          brokerage_fee: stock.brokerage_fee ?? '',
         };
         form.schema = STOCK_SCHEMA;
         form.computeLabel = s => s.label || s.name;
@@ -358,6 +474,7 @@
 <style>${STYLES}</style>
 <ha-card>
   ${this._config.title ? `<div class="card-header">${this._config.title}</div>` : ''}
+  <div class="portfolio-summary-wrap"></div>
   <div class="stock-list"></div>
 </ha-card>`;
     }
@@ -371,6 +488,13 @@
       list.querySelectorAll('.stock-main').forEach((el, i) => {
         el.addEventListener('click', () => this._toggleExpand(i));
       });
+
+      const summaryWrap = this.shadowRoot.querySelector('.portfolio-summary-wrap');
+      if (summaryWrap) {
+        summaryWrap.innerHTML = this._config.show_portfolio !== false
+          ? buildPortfolioSummary(this._config.stocks, this._hass)
+          : '';
+      }
     }
 
     _toggleExpand(index) {

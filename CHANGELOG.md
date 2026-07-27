@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-07-28
+
+### Fixed
+- Editor's `shares`/`purchase_price`/`brokerage_fee` fields were bound to an
+  empty string when unset, which `ha-form`'s number selector doesn't accept
+  — the fields could fail to render for any stock that didn't already have
+  them set. Now left `undefined` when absent.
+
 ## [0.2.0] - 2026-07-28
 
 ### Added

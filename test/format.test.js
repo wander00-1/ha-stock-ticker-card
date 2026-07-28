@@ -3,7 +3,7 @@
 const test   = require('node:test');
 const assert = require('node:assert/strict');
 
-const { fmtPrice, fmtChange, fmtMoney, fmtPL, trendIcon, dirOf, logoUrl } = require('../dist/ha-stock-ticker-card.js');
+const { fmtPrice, fmtChange, fmtMoney, fmtPL, fmtVolume, trendIcon, dirOf, logoUrl } = require('../dist/ha-stock-ticker-card.js');
 
 // ── fmtPrice ──────────────────────────────────────────────────────────────────
 
@@ -120,4 +120,23 @@ test('logoUrl: empty/falsy ticker returns empty string', () => {
   assert.equal(logoUrl(''), '');
   assert.equal(logoUrl(null), '');
   assert.equal(logoUrl(undefined), '');
+});
+
+// ── fmtVolume ─────────────────────────────────────────────────────────────────
+
+test('fmtVolume: scales to B/M/K with one decimal place', () => {
+  assert.equal(fmtVolume(1_234_000_000), '1.2B');
+  assert.equal(fmtVolume(3_245_600), '3.2M');
+  assert.equal(fmtVolume(45_600), '45.6K');
+});
+
+test('fmtVolume: below 1000 shows the raw rounded number', () => {
+  assert.equal(fmtVolume(842), '842');
+  assert.equal(fmtVolume(0), '0');
+});
+
+test('fmtVolume: null, undefined, and NaN return empty string', () => {
+  assert.equal(fmtVolume(null), '');
+  assert.equal(fmtVolume(undefined), '');
+  assert.equal(fmtVolume(NaN), '');
 });

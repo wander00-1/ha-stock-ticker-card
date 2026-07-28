@@ -98,7 +98,9 @@ a single currency across all holdings (fine for an ASX-only portfolio).
   the chart dropping down and pushing other rows around
 - Trend icon (▲/▼/–) and price change / % change (vs previous close) shown
   in green (up), red (down), or grey (flat)
-- Small "Updated HH:MM" timestamp in the bottom-left of each row
+- Day range and volume shown below the price/name (e.g. "Day $2.040–$2.175 ·
+  Vol 3.2M"), when the sensor provides them
+- Small "Updated HH:MM" timestamp below that
 - Company logo next to the symbol/name (disable with `show_logos: false`).
   Loaded client-side from a third party keyed on the ticker — that service
   sees which tickers you view if enabled. Fetched once per ticker per page

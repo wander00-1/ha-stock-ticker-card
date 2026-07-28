@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-07-28
+
+### Added
+- Day range and volume (e.g. "Day $2.040–$2.175 · Vol 3.2M") shown on the
+  front (price) view, sourced from `meta.regularMarketDayHigh/Low/Volume` —
+  already present in the sensor's attributes, no integration changes needed.
+  Fills the row's remaining space with more information rather than shrinking
+  further.
+
+### Changed
+- `.stock-updated` ("Updated HH:MM") is no longer absolutely positioned —
+  it's now a normal line below the new stats row. Retires the
+  `--row-pad-x` custom property from a few versions back; it turned out to
+  never actually link `.portfolio-summary`'s padding to `.stock-front`'s
+  (custom properties only cascade to descendants, and they aren't related in
+  the DOM) — both sides just coincidentally shared the same literal
+  fallback, so this replaces it with a plain value in both places.
+
 ## [0.8.2] - 2026-07-28
 
 ### Changed

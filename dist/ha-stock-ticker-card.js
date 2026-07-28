@@ -2,7 +2,7 @@
 
 // ── Pure helpers (module scope so the unit tests can require them) ─────────────
 
-const CARD_VERSION = '0.8.2';
+const CARD_VERSION = '0.9.0';
 
 function fmtPrice(price, currency) {
   if (price === null || isNaN(price)) return '—';
@@ -28,6 +28,14 @@ function fmtPL(amount, pct, currency) {
   const sign = amount > 0 ? '+' : '';
   const pctStr = pct !== null && !isNaN(pct) ? ` (${sign}${pct.toFixed(2)}%)` : '';
   return `${sign}${fmtMoney(amount, currency)}${pctStr}`;
+}
+
+function fmtVolume(v) {
+  if (v === null || v === undefined || isNaN(v)) return '';
+  if (v >= 1e9) return `${(v / 1e9).toFixed(1)}B`;
+  if (v >= 1e6) return `${(v / 1e6).toFixed(1)}M`;
+  if (v >= 1e3) return `${(v / 1e3).toFixed(1)}K`;
+  return String(Math.round(v));
 }
 
 const TREND_ICON_PATHS = {
@@ -194,6 +202,9 @@ function readStockData(stock, hass) {
     timestamps,
     closes,
     asOf: meta.regularMarketTime ? new Date(meta.regularMarketTime * 1000) : null,
+    dayHigh: meta.regularMarketDayHigh,
+    dayLow: meta.regularMarketDayLow,
+    volume: meta.regularMarketVolume,
     shares,
     purchasePrice,
     brokerageFee,
@@ -254,6 +265,15 @@ function buildRow(stock, index, hass, expanded, showLogos) {
     <div class="stock-pl ${plDir}">${fmtPL(d.plAmount, d.plPct, d.currency)}</div>`
     : '';
 
+  const statsParts = [];
+  if (!isNaN(d.dayLow) && !isNaN(d.dayHigh)) {
+    statsParts.push(`Day ${fmtPrice(d.dayLow, d.currency)}–${fmtPrice(d.dayHigh, d.currency)}`);
+  }
+  if (!isNaN(d.volume)) {
+    statsParts.push(`Vol ${fmtVolume(d.volume)}`);
+  }
+  const statsLine = statsParts.length ? `<div class="stock-stats">${statsParts.join(' · ')}</div>` : '';
+
   // Never render <img src="remote-url"> directly — that would re-request it
   // on every hass update. Once cacheLogo() has resolved a ticker (data URI or
   // confirmed-missing), reuse that result with no network activity at all;
@@ -273,18 +293,21 @@ function buildRow(stock, index, hass, expanded, showLogos) {
 <div class="stock-row" data-index="${index}">
   <div class="stock-flip ${expanded ? 'flipped' : ''}">
     <div class="stock-front">
-      <div class="stock-left">
-        ${logo}
-        <div class="stock-info">
-          <div class="stock-symbol">${d.symbol}</div>
-          <div class="stock-name">${d.name}</div>
+      <div class="stock-front-top">
+        <div class="stock-left">
+          ${logo}
+          <div class="stock-info">
+            <div class="stock-symbol">${d.symbol}</div>
+            <div class="stock-name">${d.name}</div>
+          </div>
+        </div>
+        <div class="stock-price-block">
+          <div class="stock-price">${fmtPrice(d.price, d.currency)}</div>
+          <div class="stock-change ${dir}"><span class="trend-icon">${trendIcon(dir)}</span> ${changeStr}</div>
+          ${holdingLine}
         </div>
       </div>
-      <div class="stock-price-block">
-        <div class="stock-price">${fmtPrice(d.price, d.currency)}</div>
-        <div class="stock-change ${dir}"><span class="trend-icon">${trendIcon(dir)}</span> ${changeStr}</div>
-        ${holdingLine}
-      </div>
+      ${statsLine}
       ${updatedStr ? `<div class="stock-updated">Updated ${updatedStr}</div>` : ''}
     </div>
     <div class="stock-back">${expanded ? buildBackContent(d) : ''}</div>
@@ -348,17 +371,26 @@ const STYLES = `
   .stock-flip > * { pointer-events: none; }
   .stock-flip:hover .stock-front { background: var(--secondary-background-color, rgba(0,0,0,0.03)); }
   .stock-front {
-    --row-pad-x: 16px;
     position: absolute;
     inset: 0;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px var(--row-pad-x);
+    flex-direction: column;
+    justify-content: center;
+    padding: 10px 16px;
     opacity: 1;
     transition: opacity 0.15s ease;
   }
   .stock-flip.flipped .stock-front { opacity: 0; }
+  .stock-front-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .stock-stats {
+    margin-top: 6px;
+    font-size: 0.72em;
+    color: var(--secondary-text-color);
+  }
   .stock-back {
     position: absolute;
     inset: 0;
@@ -406,9 +438,7 @@ const STYLES = `
     color: var(--secondary-text-color);
   }
   .stock-updated {
-    position: absolute;
-    left: var(--row-pad-x, 16px);
-    bottom: 8px;
+    margin-top: 4px;
     font-size: 0.68em;
     color: var(--secondary-text-color);
     opacity: 0.8;
@@ -455,7 +485,7 @@ const STYLES = `
   .ref-purchase { color: var(--primary-color, #7c4dff); }
   .portfolio-summary {
     margin: 4px 0 6px;
-    padding: 8px var(--row-pad-x, 16px);
+    padding: 8px 16px;
     background: var(--secondary-background-color, rgba(0,0,0,0.03));
   }
   .portfolio-title { margin-bottom: 6px; }
@@ -760,7 +790,7 @@ if (typeof HTMLElement !== 'undefined') {
 // the browser ES-module context, so this is a no-op there.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    fmtPrice, fmtChange, fmtMoney, fmtPL, trendIcon, dirOf, logoUrl, logoCache, buildChart,
+    fmtPrice, fmtChange, fmtMoney, fmtPL, fmtVolume, trendIcon, dirOf, logoUrl, logoCache, buildChart,
     readStockData, buildBackContent, buildRow, buildPortfolioSummary,
     TITLE_SCHEMA, STOCK_SCHEMA,
   };

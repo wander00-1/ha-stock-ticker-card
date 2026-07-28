@@ -119,3 +119,15 @@ test('readStockData: shares without purchase_price does not count as a holding',
   const d = readStockData({ entity: 'sensor.dro', shares: 250 }, hass);
   assert.equal(d.hasHolding, false);
 });
+
+// ── day range / volume ────────────────────────────────────────────────────────
+
+test('readStockData: passes through regularMarketDayHigh/Low and volume from meta', () => {
+  const hass = makeHass('sensor.dro', {
+    meta: { regularMarketDayHigh: 2.175, regularMarketDayLow: 2.04, regularMarketVolume: 3245600 },
+  });
+  const d = readStockData({ entity: 'sensor.dro' }, hass);
+  assert.equal(d.dayHigh, 2.175);
+  assert.equal(d.dayLow, 2.04);
+  assert.equal(d.volume, 3245600);
+});

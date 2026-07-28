@@ -58,3 +58,21 @@ test('buildRow: omits the logo when there is no ticker to key it on', () => {
   const html = buildRow({ entity: 'sensor.dro' }, 0, hass, false, true);
   assert.doesNotMatch(html, /stock-logo/);
 });
+
+// ── day range / volume stats line ─────────────────────────────────────────────
+
+test('buildRow: shows day range and volume when both are present in meta', () => {
+  const hass = makeHass('sensor.dro', {
+    meta: { regularMarketDayHigh: 2.175, regularMarketDayLow: 2.04, regularMarketVolume: 3245600 },
+  });
+  const html = buildRow({ entity: 'sensor.dro' }, 0, hass, false, false);
+  assert.match(html, /stock-stats/);
+  assert.match(html, /Day \$2\.040–\$2\.175/);
+  assert.match(html, /Vol 3\.2M/);
+});
+
+test('buildRow: omits the stats line entirely when day range/volume are absent', () => {
+  const hass = makeHass('sensor.dro', { meta: {} });
+  const html = buildRow({ entity: 'sensor.dro' }, 0, hass, false, false);
+  assert.doesNotMatch(html, /stock-stats/);
+});

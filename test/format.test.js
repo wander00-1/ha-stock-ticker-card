@@ -3,7 +3,7 @@
 const test   = require('node:test');
 const assert = require('node:assert/strict');
 
-const { fmtPrice, fmtChange, fmtMoney, fmtPL, trendIcon, dirOf } = require('../dist/ha-stock-ticker-card.js');
+const { fmtPrice, fmtChange, fmtMoney, fmtPL, trendIcon, dirOf, logoUrl } = require('../dist/ha-stock-ticker-card.js');
 
 // ── fmtPrice ──────────────────────────────────────────────────────────────────
 
@@ -96,4 +96,16 @@ test('dirOf: null, undefined, and NaN all map to flat', () => {
   assert.equal(dirOf(null), 'flat');
   assert.equal(dirOf(undefined), 'flat');
   assert.equal(dirOf(NaN), 'flat');
+});
+
+// ── logoUrl ───────────────────────────────────────────────────────────────────
+
+test('logoUrl: builds a financialmodelingprep.com image URL keyed on the ticker', () => {
+  assert.equal(logoUrl('DRO.AX'), 'https://financialmodelingprep.com/image-stock/DRO.AX.png');
+});
+
+test('logoUrl: empty/falsy ticker returns empty string', () => {
+  assert.equal(logoUrl(''), '');
+  assert.equal(logoUrl(null), '');
+  assert.equal(logoUrl(undefined), '');
 });

@@ -2,7 +2,7 @@
 
 // ── Pure helpers (module scope so the unit tests can require them) ─────────────
 
-const CARD_VERSION = '0.6.2';
+const CARD_VERSION = '0.7.0';
 
 function fmtPrice(price, currency) {
   if (price === null || isNaN(price)) return '—';
@@ -36,6 +36,14 @@ function trendIcon(dir) {
 
 function dirOf(value) {
   return value === null || value === undefined || isNaN(value) ? 'flat' : value > 0 ? 'up' : value < 0 ? 'down' : 'flat';
+}
+
+function logoUrl(ticker) {
+  // Financial Modeling Prep's image endpoint is keyed directly off the
+  // ticker (including exchange suffix, e.g. DRO.AX), needs no API key for
+  // this specific image route, and 404s cleanly for unknown symbols instead
+  // of returning a misleading placeholder.
+  return ticker ? `https://financialmodelingprep.com/image-stock/${encodeURIComponent(ticker)}.png` : '';
 }
 
 function buildChart(timestamps, closes, prevClose, purchasePrice) {
@@ -136,6 +144,7 @@ function readStockData(stock, hass) {
     // always show the ticker as the secondary line.
     symbol: stock.name || meta.longName || meta.shortName || meta.symbol || stock.entity,
     name: meta.symbol || '',
+    ticker: meta.symbol || '',
     price,
     currency: meta.currency,
     prevClose,
@@ -179,7 +188,7 @@ ${buildChart(d.timestamps, d.closes, d.prevClose, d.hasHolding ? d.purchasePrice
 ${costBreakdown}`;
 }
 
-function buildRow(stock, index, hass, expanded) {
+function buildRow(stock, index, hass, expanded, showLogos) {
   const d = readStockData(stock, hass);
 
   if (!d.available) {
@@ -204,13 +213,20 @@ function buildRow(stock, index, hass, expanded) {
     <div class="stock-pl ${plDir}">${fmtPL(d.plAmount, d.plPct, d.currency)}</div>`
     : '';
 
+  const logo = (showLogos && logoUrl(d.ticker))
+    ? `<img class="stock-logo" src="${logoUrl(d.ticker)}" alt="" loading="lazy" onerror="this.remove()"/>`
+    : '';
+
   return `
 <div class="stock-row" data-index="${index}">
   <div class="stock-flip ${expanded ? 'flipped' : ''}">
     <div class="stock-front">
-      <div class="stock-info">
-        <div class="stock-symbol">${d.symbol}</div>
-        <div class="stock-name">${d.name}</div>
+      <div class="stock-left">
+        ${logo}
+        <div class="stock-info">
+          <div class="stock-symbol">${d.symbol}</div>
+          <div class="stock-name">${d.name}</div>
+        </div>
       </div>
       <div class="stock-price-block">
         <div class="stock-price">${fmtPrice(d.price, d.currency)}</div>
@@ -274,7 +290,7 @@ const STYLES = `
   }
   .stock-flip {
     position: relative;
-    height: 168px;
+    height: 140px;
     cursor: pointer;
   }
   .stock-flip > * { pointer-events: none; }
@@ -297,9 +313,10 @@ const STYLES = `
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 10px 16px 8px;
+    padding: 8px 16px 6px;
     opacity: 0;
     transition: opacity 0.15s ease;
+    overflow: hidden;
   }
   .stock-flip.flipped .stock-back { opacity: 1; }
   .chart-header {
@@ -315,7 +332,16 @@ const STYLES = `
     letter-spacing: 0.03em;
     color: var(--primary-text-color);
   }
-  .stock-info { display: flex; flex-direction: column; gap: 2px; }
+  .stock-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .stock-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    object-fit: contain;
+    background: #fff;
+    flex-shrink: 0;
+  }
+  .stock-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .stock-symbol {
     font-weight: 700;
     font-size: 1.05em;
@@ -354,7 +380,7 @@ const STYLES = `
   .stock-pl.up { color: var(--stock-up-color, #2fbf4f); }
   .stock-pl.down { color: var(--stock-down-color, #e64848); }
   .stock-pl.flat { color: var(--secondary-text-color, #888); }
-  .stock-chart-svg { width: 100%; height: 110px; display: block; flex-shrink: 0; }
+  .stock-chart-svg { width: 100%; flex: 1; min-height: 0; display: block; }
   .chart-empty {
     padding: 24px 0;
     text-align: center;
@@ -432,6 +458,7 @@ const EDITOR_STYLES = `
 const TITLE_SCHEMA = [
   { name: 'title', label: 'Card title', selector: { text: {} } },
   { name: 'show_portfolio', label: 'Show portfolio movement summary', selector: { boolean: {} } },
+  { name: 'show_logos', label: 'Show company logos (loaded from financialmodelingprep.com)', selector: { boolean: {} } },
 ];
 
 const STOCK_SCHEMA = [
@@ -484,6 +511,7 @@ if (typeof HTMLElement !== 'undefined') {
       titleForm.data = {
         title: this._config.title || '',
         show_portfolio: this._config.show_portfolio !== false,
+        show_logos: this._config.show_logos !== false,
       };
       titleForm.schema = TITLE_SCHEMA;
       titleForm.computeLabel = s => s.label || s.name;
@@ -592,8 +620,9 @@ if (typeof HTMLElement !== 'undefined') {
     _update() {
       const list = this.shadowRoot.querySelector('.stock-list');
       if (!list) return;
+      const showLogos = this._config.show_logos !== false;
       list.innerHTML = this._config.stocks
-        .map((s, i) => buildRow(s, i, this._hass, this._expanded.has(i)))
+        .map((s, i) => buildRow(s, i, this._hass, this._expanded.has(i), showLogos))
         .join('');
       list.querySelectorAll('.stock-row').forEach(rowEl => {
         const flip = rowEl.querySelector('.stock-flip');
@@ -656,7 +685,7 @@ if (typeof HTMLElement !== 'undefined') {
 // the browser ES-module context, so this is a no-op there.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    fmtPrice, fmtChange, fmtMoney, fmtPL, trendIcon, dirOf, buildChart,
+    fmtPrice, fmtChange, fmtMoney, fmtPL, trendIcon, dirOf, logoUrl, buildChart,
     readStockData, buildBackContent, buildRow, buildPortfolioSummary,
     TITLE_SCHEMA, STOCK_SCHEMA,
   };

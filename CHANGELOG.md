@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-07-28
+
+### Added
+- Company logo next to each stock's symbol/name, loaded client-side from
+  financialmodelingprep.com's free image endpoint keyed on the ticker
+  (no API key, no backend involvement — plain `<img>` loading isn't subject
+  to CORS the way the price data fetch was). 404s for unknown tickers are
+  handled gracefully (the `<img>` removes itself) rather than showing a
+  broken-image icon. Toggle with `show_logos` (default `true`)
+
+### Changed
+- Reduced row height (168px → 140px) and chart height to cut down on the
+  empty space in the front (price) view — the chart SVG now flexes to fill
+  whatever space remains after the header/meta text instead of a fixed
+  height, so it can't overflow its row if the balance shifts
+
 ## [0.6.2] - 2026-07-28
 
 ### Fixed

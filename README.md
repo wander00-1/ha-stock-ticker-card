@@ -41,6 +41,7 @@ both an *Integration* and a *Dashboard* category.)
 type: custom:ha-stock-ticker-card
 title: Watchlist          # optional — card header text
 show_portfolio: true       # optional — defaults to true, hides if no stock has holding info
+show_logos: true           # optional — defaults to true, company logo next to each stock
 stocks:
   - name: DroneShield      # optional — defaults to the company name, ticker shown as a subtitle
     entity: sensor.dro_stock_price
@@ -56,6 +57,7 @@ stocks:
 |-----|------|----------|-------------|
 | `title` | string | No | Card header text |
 | `show_portfolio` | boolean | No | Show the aggregate invested/current value/movement summary. Defaults to `true`; automatically hidden if no stock has holding info |
+| `show_logos` | boolean | No | Show a company logo next to each stock, loaded from [financialmodelingprep.com](https://financialmodelingprep.com)'s free image endpoint, keyed on the ticker symbol. Defaults to `true`; a logo silently disappears (rather than showing a broken-image icon) if none exists for that ticker |
 | `stocks` | list | Yes | One or more stock definitions (see below) |
 
 **Stock definition**
@@ -97,6 +99,9 @@ a single currency across all holdings (fine for an ASX-only portfolio).
 - Trend icon (▲/▼/–) and price change / % change (vs previous close) shown
   in green (up), red (down), or grey (flat)
 - Small "Updated HH:MM" timestamp in the bottom-left of each row
+- Company logo next to the symbol/name (disable with `show_logos: false`).
+  Loaded client-side from a third party keyed on the ticker — that service
+  sees which tickers you view if enabled
 - The chart view shows the stock's symbol and a colour-coded trend badge at
   the top, so it's clear which stock and which direction you're looking at
 - Dashed reference line in the chart marks the previous close; a second,

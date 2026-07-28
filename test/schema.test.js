@@ -31,3 +31,10 @@ test('STOCK_SCHEMA: number fields use null-friendly box mode (no default/require
     assert.equal(field.selector.number.mode, 'box');
   }
 });
+
+test('TITLE_SCHEMA: show_portfolio and show_logos are boolean toggles', () => {
+  for (const name of ['show_portfolio', 'show_logos']) {
+    const field = TITLE_SCHEMA.find(f => f.name === name);
+    assert.ok(field.selector.boolean, `${name} should use a boolean selector`);
+  }
+});

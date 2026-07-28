@@ -42,7 +42,7 @@ type: custom:ha-stock-ticker-card
 title: Watchlist          # optional — card header text
 show_portfolio: true       # optional — defaults to true, hides if no stock has holding info
 stocks:
-  - name: DroneShield      # optional — defaults to the ticker symbol
+  - name: DroneShield      # optional — defaults to the company name, ticker shown as a subtitle
     entity: sensor.dro_stock_price
     shares: 250             # optional — omit for a watchlist-only entry
     purchase_price: 1.85    # optional — price paid per share
@@ -62,7 +62,7 @@ stocks:
 
 | Key | Type | Required | Description |
 |-----|------|----------|-------------|
-| `name` | string | No | Display label — defaults to the ticker symbol from the sensor |
+| `name` | string | No | Bold display label — defaults to the sensor's company name (`meta.longName`), with the ticker symbol always shown as a subtitle below it |
 | `entity` | string | Yes | Entity ID of the price sensor for this stock |
 | `shares` | number | No | Number of shares held. Omit to treat the row as watchlist-only (no P/L shown) |
 | `purchase_price` | number | No | Price paid per share. Required alongside `shares` to compute P/L |

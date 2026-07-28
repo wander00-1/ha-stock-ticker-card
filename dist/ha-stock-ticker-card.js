@@ -2,7 +2,7 @@
 
 // ── Pure helpers (module scope so the unit tests can require them) ─────────────
 
-const CARD_VERSION = '0.5.1';
+const CARD_VERSION = '0.6.0';
 
 function fmtPrice(price, currency) {
   if (price === null || isNaN(price)) return '—';
@@ -131,8 +131,11 @@ function readStockData(stock, hass) {
 
   return {
     available: !isNaN(price),
-    symbol: stock.name || meta.symbol || stock.entity,
-    name: !stock.name ? (meta.longName || meta.shortName || '') : (meta.symbol || ''),
+    // symbol is the prominent (bold) line, name the secondary (grey) one —
+    // prefer a configured display name or the company name for symbol, and
+    // always show the ticker as the secondary line.
+    symbol: stock.name || meta.longName || meta.shortName || meta.symbol || stock.entity,
+    name: meta.symbol || '',
     price,
     currency: meta.currency,
     prevClose,
@@ -240,7 +243,7 @@ function buildPortfolioSummary(stocks, hass) {
 
   return `
 <div class="portfolio-summary">
-  <div class="portfolio-title">Portfolio</div>
+  <div class="stock-symbol portfolio-title">Portfolio</div>
   <div class="portfolio-row"><span>Invested</span><span>${fmtMoney(totalCost, currency)}</span></div>
   <div class="portfolio-row"><span>Current value</span><span>${fmtMoney(totalValue, currency)}</span></div>
   <div class="portfolio-row total ${dir}"><span>Movement</span><span>${fmtPL(pl, pct, currency)}</span></div>
@@ -371,14 +374,7 @@ const STYLES = `
     border-radius: 8px;
     background: var(--secondary-background-color, rgba(0,0,0,0.03));
   }
-  .portfolio-title {
-    font-size: 0.78em;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--secondary-text-color);
-    margin-bottom: 4px;
-  }
+  .portfolio-title { margin-bottom: 6px; }
   .portfolio-divider {
     height: 1px;
     margin: 0 16px 8px;
@@ -439,7 +435,7 @@ const TITLE_SCHEMA = [
 ];
 
 const STOCK_SCHEMA = [
-  { name: 'name', label: 'Display name (optional, overrides symbol)', selector: { text: {} } },
+  { name: 'name', label: 'Display name (optional, overrides company name)', selector: { text: {} } },
   { name: 'entity', label: 'Stock price sensor', selector: { entity: { domain: 'sensor' } } },
   { name: 'shares', label: 'Shares owned (optional)', selector: { number: { mode: 'box', min: 0, step: 'any' } } },
   { name: 'purchase_price', label: 'Purchase price per share (optional)', selector: { number: { mode: 'box', min: 0, step: 'any' } } },

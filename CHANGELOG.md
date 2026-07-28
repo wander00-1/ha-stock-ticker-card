@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-07-28
+
+### Changed
+- "Portfolio" title now reuses the same bold/white style as a stock symbol
+  (`.stock-symbol`) instead of a small grey uppercase label
+- Swapped which line is bold vs. secondary for each stock: the bold line now
+  defaults to the company name (`meta.longName`), with the ticker symbol
+  always shown as the secondary/grey subtitle beneath it. A configured
+  `name` override still takes the bold spot; only the no-override default
+  changed
+
 ## [0.5.1] - 2026-07-28
 
 ### Added

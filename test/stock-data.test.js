@@ -57,11 +57,18 @@ test('readStockData: falls back to chartPreviousClose when previousClose is abse
 
 // ── symbol / name resolution ──────────────────────────────────────────────────
 
-test('readStockData: no display name configured -> symbol from sensor, name from longName', () => {
+test('readStockData: no display name configured -> symbol (bold) is the company name, name (secondary) is the ticker', () => {
   const hass = makeHass('sensor.dro', { meta: { symbol: 'DRO.AX', longName: 'DroneShield Limited' } });
   const d = readStockData({ entity: 'sensor.dro' }, hass);
+  assert.equal(d.symbol, 'DroneShield Limited');
+  assert.equal(d.name, 'DRO.AX');
+});
+
+test('readStockData: no longName available -> symbol falls back to the ticker itself', () => {
+  const hass = makeHass('sensor.dro', { meta: { symbol: 'DRO.AX' } });
+  const d = readStockData({ entity: 'sensor.dro' }, hass);
   assert.equal(d.symbol, 'DRO.AX');
-  assert.equal(d.name, 'DroneShield Limited');
+  assert.equal(d.name, 'DRO.AX');
 });
 
 test('readStockData: display name configured -> symbol is the override, name is the ticker', () => {

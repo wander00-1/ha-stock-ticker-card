@@ -47,6 +47,12 @@ test('buildPortfolioSummary: includes a divider after the summary box when it re
   assert.match(html, /portfolio-divider/);
 });
 
+test('buildPortfolioSummary: includes a "Portfolio" title', () => {
+  const hass = makeHass({ 'sensor.dro': { state: '2.08' } });
+  const html = buildPortfolioSummary([{ entity: 'sensor.dro', shares: 250, purchase_price: 2.04 }], hass);
+  assert.match(html, /portfolio-title">Portfolio</);
+});
+
 test('buildPortfolioSummary: no divider when there is nothing to show', () => {
   const hass = makeHass({ 'sensor.dro': { state: '2.08' } });
   const html = buildPortfolioSummary([{ entity: 'sensor.dro' }], hass);

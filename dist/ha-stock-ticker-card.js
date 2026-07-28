@@ -2,7 +2,7 @@
 
 // ── Pure helpers (module scope so the unit tests can require them) ─────────────
 
-const CARD_VERSION = '0.5.0';
+const CARD_VERSION = '0.5.1';
 
 function fmtPrice(price, currency) {
   if (price === null || isNaN(price)) return '—';
@@ -240,6 +240,7 @@ function buildPortfolioSummary(stocks, hass) {
 
   return `
 <div class="portfolio-summary">
+  <div class="portfolio-title">Portfolio</div>
   <div class="portfolio-row"><span>Invested</span><span>${fmtMoney(totalCost, currency)}</span></div>
   <div class="portfolio-row"><span>Current value</span><span>${fmtMoney(totalValue, currency)}</span></div>
   <div class="portfolio-row total ${dir}"><span>Movement</span><span>${fmtPL(pl, pct, currency)}</span></div>
@@ -369,6 +370,14 @@ const STYLES = `
     padding: 10px 14px;
     border-radius: 8px;
     background: var(--secondary-background-color, rgba(0,0,0,0.03));
+  }
+  .portfolio-title {
+    font-size: 0.78em;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--secondary-text-color);
+    margin-bottom: 4px;
   }
   .portfolio-divider {
     height: 1px;

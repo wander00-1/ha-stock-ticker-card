@@ -2,7 +2,7 @@
 
 // ── Pure helpers (module scope so the unit tests can require them) ─────────────
 
-const CARD_VERSION = '0.8.0';
+const CARD_VERSION = '0.8.2';
 
 function fmtPrice(price, currency) {
   if (price === null || isNaN(price)) return '—';
@@ -329,7 +329,7 @@ const STYLES = `
     letter-spacing: 0.02em;
     color: var(--primary-text-color);
   }
-  .stock-list { padding: 8px 0; }
+  .stock-list { padding: 4px 0; }
   .stock-row {
     border-bottom: 1px solid var(--divider-color, rgba(0,0,0,0.08));
   }
@@ -342,7 +342,7 @@ const STYLES = `
   }
   .stock-flip {
     position: relative;
-    height: 140px;
+    height: 120px;
     cursor: pointer;
   }
   .stock-flip > * { pointer-events: none; }
@@ -354,7 +354,7 @@ const STYLES = `
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px var(--row-pad-x);
+    padding: 10px var(--row-pad-x);
     opacity: 1;
     transition: opacity 0.15s ease;
   }
@@ -365,7 +365,7 @@ const STYLES = `
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 8px 16px 6px;
+    padding: 6px 16px 5px;
     opacity: 0;
     transition: opacity 0.15s ease;
     overflow: hidden;
@@ -454,14 +454,14 @@ const STYLES = `
   .ref-prev { color: var(--secondary-text-color, #888); }
   .ref-purchase { color: var(--primary-color, #7c4dff); }
   .portfolio-summary {
-    margin: 4px 0 12px;
-    padding: 10px var(--row-pad-x, 16px);
+    margin: 4px 0 6px;
+    padding: 8px var(--row-pad-x, 16px);
     background: var(--secondary-background-color, rgba(0,0,0,0.03));
   }
   .portfolio-title { margin-bottom: 6px; }
   .portfolio-divider {
     height: 1px;
-    margin: 0 0 8px;
+    margin: 0 0 4px;
     background: var(--divider-color, rgba(0,0,0,0.12));
   }
   .portfolio-row {
@@ -622,7 +622,7 @@ if (typeof HTMLElement !== 'undefined') {
       addRow.className = 'add-row';
       const addBtn = document.createElement('button');
       addBtn.textContent = '+ Add Stock';
-      addBtn.style.cssText = 'background:#1976d2;color:white;border:none;border-radius:4px;padding:8px 16px;font-size:0.875em;font-weight:500;cursor:pointer;letter-spacing:0.04em;';
+      addBtn.style.cssText = 'background:var(--primary-color, #1976d2);color:white;border:none;border-radius:4px;padding:8px 16px;font-size:0.875em;font-weight:500;cursor:pointer;letter-spacing:0.04em;';
       addBtn.addEventListener('click', () => {
         this._config.stocks.push({ name: '', entity: '' });
         this._fire();

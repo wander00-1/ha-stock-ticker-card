@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.2] - 2026-07-28
+
+### Changed
+- Trimmed more of the empty space around and inside each row: row height
+  168px → 140px → 120px, front/back padding reduced, and less margin around
+  the portfolio summary box and its divider
+
+## [0.8.1] - 2026-07-28
+
+### Fixed
+- Editor's "+ Add Stock" button used a hardcoded blue (`#1976d2`) instead of
+  `var(--primary-color)` — the one place in the card that didn't follow the
+  active theme's accent colour
+
 ## [0.8.0] - 2026-07-28
 
 ### Changed

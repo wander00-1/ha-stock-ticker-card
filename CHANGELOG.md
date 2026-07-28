@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-07-28
+
+### Fixed
+- The "Updated HH:MM" label's left position and the row's own left padding
+  were two independently hardcoded `16px` values instead of one shared
+  source — they were supposed to match but had no structural guarantee to.
+  Now both reference a single `--row-pad-x` custom property so they can't
+  drift apart.
+
 ## [0.6.0] - 2026-07-28
 
 ### Changed

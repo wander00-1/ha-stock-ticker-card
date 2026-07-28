@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2026-07-28
+
+### Fixed
+- The portfolio summary box had both a 16px outer margin and 14px inner
+  padding (30px total indent), while stock rows only have 16px padding —
+  their text never actually lined up. The box now spans full width like a
+  stock row, with the same 16px padding, so both sides line up exactly.
+
 ## [0.6.1] - 2026-07-28
 
 ### Fixed

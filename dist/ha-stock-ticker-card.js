@@ -2,7 +2,7 @@
 
 // ── Pure helpers (module scope so the unit tests can require them) ─────────────
 
-const CARD_VERSION = '0.6.1';
+const CARD_VERSION = '0.6.2';
 
 function fmtPrice(price, currency) {
   if (price === null || isNaN(price)) return '—';
@@ -370,15 +370,14 @@ const STYLES = `
   .ref-prev { color: var(--secondary-text-color, #888); }
   .ref-purchase { color: var(--primary-color, #7c4dff); }
   .portfolio-summary {
-    margin: 4px 16px 12px;
-    padding: 10px 14px;
-    border-radius: 8px;
+    margin: 4px 0 12px;
+    padding: 10px var(--row-pad-x, 16px);
     background: var(--secondary-background-color, rgba(0,0,0,0.03));
   }
   .portfolio-title { margin-bottom: 6px; }
   .portfolio-divider {
     height: 1px;
-    margin: 0 16px 8px;
+    margin: 0 0 8px;
     background: var(--divider-color, rgba(0,0,0,0.12));
   }
   .portfolio-row {

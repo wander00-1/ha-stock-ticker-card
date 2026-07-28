@@ -97,7 +97,11 @@ a single currency across all holdings (fine for an ASX-only portfolio).
 - Trend icon (▲/▼/–) and price change / % change (vs previous close) shown
   in green (up), red (down), or grey (flat)
 - Small "Updated HH:MM" timestamp in the bottom-left of each row
-- Dashed reference line in the chart marks the previous close
+- The chart view shows the stock's symbol and a colour-coded trend badge at
+  the top, so it's clear which stock and which direction you're looking at
+- Dashed reference line in the chart marks the previous close; a second,
+  differently-coloured dashed line marks your purchase price when the stock
+  has `shares`/`purchase_price` set
 - Card colours follow the active HA theme; override the up/down colours with
   `--stock-up-color`/`--stock-down-color` CSS variables in your theme if
   desired

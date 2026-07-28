@@ -42,3 +42,22 @@ test('buildChart: flat series (all closes equal, no prevClose) still renders wit
   assert.match(svg, /<svg/);
   assert.doesNotMatch(svg, /NaN/);
 });
+
+// ── purchase-price reference line ────────────────────────────────────────────
+
+test('buildChart: draws a second reference line when a purchase price is given', () => {
+  const svg = buildChart([1, 2, 3], [2.0, 2.05, 2.1], 2.0, 1.85);
+  const dashedLines = svg.match(/stroke-dasharray/g) || [];
+  assert.equal(dashedLines.length, 2, 'expected both the prevClose and purchase-price lines');
+  assert.match(svg, /--primary-color/);
+});
+
+test('buildChart: omits the purchase-price line when none is given', () => {
+  const svg = buildChart([1, 2, 3], [2.0, 2.05, 2.1], 2.0, null);
+  assert.doesNotMatch(svg, /--primary-color/);
+});
+
+test('buildChart: purchase price outside the candle range still renders without NaN', () => {
+  const svg = buildChart([1, 2, 3], [2.0, 2.05, 2.1], 2.0, 0.5);
+  assert.doesNotMatch(svg, /NaN/);
+});

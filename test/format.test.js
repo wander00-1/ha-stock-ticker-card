@@ -3,7 +3,7 @@
 const test   = require('node:test');
 const assert = require('node:assert/strict');
 
-const { fmtPrice, fmtChange, fmtMoney, fmtPL, trendIcon } = require('../dist/ha-stock-ticker-card.js');
+const { fmtPrice, fmtChange, fmtMoney, fmtPL, trendIcon, dirOf } = require('../dist/ha-stock-ticker-card.js');
 
 // ── fmtPrice ──────────────────────────────────────────────────────────────────
 
@@ -82,4 +82,18 @@ test('trendIcon: up/down/flat map to distinct icons', () => {
   assert.equal(trendIcon('up'), '▲');
   assert.equal(trendIcon('down'), '▼');
   assert.equal(trendIcon('flat'), '–');
+});
+
+// ── dirOf ─────────────────────────────────────────────────────────────────────
+
+test('dirOf: positive/negative/zero map to up/down/flat', () => {
+  assert.equal(dirOf(0.5), 'up');
+  assert.equal(dirOf(-0.5), 'down');
+  assert.equal(dirOf(0), 'flat');
+});
+
+test('dirOf: null, undefined, and NaN all map to flat', () => {
+  assert.equal(dirOf(null), 'flat');
+  assert.equal(dirOf(undefined), 'flat');
+  assert.equal(dirOf(NaN), 'flat');
 });

@@ -2,7 +2,7 @@
 
 // ── Pure helpers (module scope so the unit tests can require them) ─────────────
 
-const CARD_VERSION = '0.3.0';
+const CARD_VERSION = '0.4.0';
 
 function fmtPrice(price, currency) {
   if (price === null || isNaN(price)) return '—';
@@ -34,7 +34,11 @@ function trendIcon(dir) {
   return dir === 'up' ? '▲' : dir === 'down' ? '▼' : '–';
 }
 
-function buildChart(timestamps, closes, prevClose) {
+function dirOf(value) {
+  return value === null || value === undefined || isNaN(value) ? 'flat' : value > 0 ? 'up' : value < 0 ? 'down' : 'flat';
+}
+
+function buildChart(timestamps, closes, prevClose, purchasePrice) {
   const W = 600, H = 140, pad = 6;
   const pairs = (timestamps || [])
     .map((t, i) => ({ t, c: closes[i] }))
@@ -44,12 +48,18 @@ function buildChart(timestamps, closes, prevClose) {
     return '<div class="chart-empty">No chart data yet</div>';
   }
 
+  const hasPurchase = purchasePrice !== null && purchasePrice !== undefined && !isNaN(purchasePrice);
+
   const values = pairs.map(p => p.c);
   let min = Math.min(...values);
   let max = Math.max(...values);
   if (prevClose !== null && prevClose !== undefined) {
     min = Math.min(min, prevClose);
     max = Math.max(max, prevClose);
+  }
+  if (hasPurchase) {
+    min = Math.min(min, purchasePrice);
+    max = Math.max(max, purchasePrice);
   }
   if (min === max) { min -= 1; max += 1; }
   const rangeY = max - min;
@@ -69,9 +79,15 @@ function buildChart(timestamps, closes, prevClose) {
     ? `<line x1="0" y1="${prevY}" x2="${W}" y2="${prevY}" stroke="var(--secondary-text-color, #888)" stroke-width="1" stroke-dasharray="5,4" opacity="0.6"/>`
     : '';
 
+  const purchaseY = hasPurchase ? y(purchasePrice).toFixed(1) : null;
+  const purchaseLine = purchaseY !== null
+    ? `<line x1="0" y1="${purchaseY}" x2="${W}" y2="${purchaseY}" stroke="var(--primary-color, #7c4dff)" stroke-width="1.5" stroke-dasharray="2,3" opacity="0.8"/>`
+    : '';
+
   return `
 <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="stock-chart-svg">
   ${prevLine}
+  ${purchaseLine}
   <polyline points="${areaPoints}" fill="${color}" fill-opacity="0.12" stroke="none"/>
   <polyline points="${linePoints}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
 </svg>`;
@@ -131,15 +147,22 @@ function readStockData(stock, hass) {
 }
 
 function buildBackContent(d) {
+  const dir = dirOf(d.change);
+  const changeStr = fmtChange(d.change, d.pct || 0);
   const asOfStr = d.asOf ? d.asOf.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
   const prevCloseStr = d.prevClose !== undefined ? fmtPrice(d.prevClose, d.currency) : '';
+  const yourPriceStr = d.hasHolding ? ` · Your price ${fmtPrice(d.purchasePrice, d.currency)}` : '';
   const costBreakdown = d.hasHolding
     ? `<div class="stock-chart-meta">Cost: ${fmtMoney(d.shares * d.purchasePrice, d.currency)}${d.brokerageFee ? ` + ${fmtMoney(d.brokerageFee, d.currency)} brokerage` : ''} = ${fmtMoney(d.costBasis, d.currency)} · Now: ${fmtMoney(d.currentValue, d.currency)}</div>`
     : '';
 
   return `
-${buildChart(d.timestamps, d.closes, d.prevClose)}
-<div class="stock-chart-meta">${asOfStr ? `As of ${asOfStr}` : ''}${prevCloseStr ? ` · Prev close ${prevCloseStr}` : ''}</div>
+<div class="chart-header">
+  <span class="chart-symbol">${d.symbol}</span>
+  <span class="stock-change ${dir}"><span class="trend-icon">${trendIcon(dir)}</span> ${changeStr}</span>
+</div>
+${buildChart(d.timestamps, d.closes, d.prevClose, d.hasHolding ? d.purchasePrice : null)}
+<div class="stock-chart-meta">${asOfStr ? `As of ${asOfStr}` : ''}${prevCloseStr ? ` · Prev close ${prevCloseStr}` : ''}${yourPriceStr}</div>
 ${costBreakdown}`;
 }
 
@@ -158,11 +181,11 @@ function buildRow(stock, index, hass, expanded) {
 </div>`;
   }
 
-  const dir = d.change === null ? 'flat' : d.change > 0 ? 'up' : d.change < 0 ? 'down' : 'flat';
+  const dir = dirOf(d.change);
   const changeStr = fmtChange(d.change, d.pct || 0);
   const updatedStr = d.asOf ? d.asOf.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
-  const plDir = d.plAmount === null ? 'flat' : d.plAmount > 0 ? 'up' : d.plAmount < 0 ? 'down' : 'flat';
+  const plDir = dirOf(d.plAmount);
   const holdingLine = d.hasHolding
     ? `<div class="stock-holding">${d.shares} sh @ ${fmtPrice(d.purchasePrice, d.currency)}</div>
     <div class="stock-pl ${plDir}">${fmtPL(d.plAmount, d.plPct, d.currency)}</div>`
@@ -263,6 +286,19 @@ const STYLES = `
     transition: opacity 0.15s ease;
   }
   .stock-flip.flipped .stock-back { opacity: 1; }
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2px;
+    flex-shrink: 0;
+  }
+  .chart-symbol {
+    font-weight: 700;
+    font-size: 0.95em;
+    letter-spacing: 0.03em;
+    color: var(--primary-text-color);
+  }
   .stock-info { display: flex; flex-direction: column; gap: 2px; }
   .stock-symbol {
     font-weight: 700;
@@ -597,7 +633,7 @@ if (typeof HTMLElement !== 'undefined') {
 // the browser ES-module context, so this is a no-op there.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    fmtPrice, fmtChange, fmtMoney, fmtPL, trendIcon, buildChart,
+    fmtPrice, fmtChange, fmtMoney, fmtPL, trendIcon, dirOf, buildChart,
     readStockData, buildBackContent, buildRow, buildPortfolioSummary,
     TITLE_SCHEMA, STOCK_SCHEMA,
   };

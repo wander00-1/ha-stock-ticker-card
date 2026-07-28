@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-07-28
+
+### Added
+- Chart view now shows the stock's symbol and a colour-coded trend badge
+  (icon + change) at the top — previously the chart gave no indication of
+  which stock it belonged to
+- A second dashed reference line marks your purchase price on the chart
+  (distinct colour from the previous-close line) when a stock has holding
+  info, plus a "Your price" label in the chart's meta line
+- `dirOf` helper consolidates the up/down/flat colour logic that was
+  previously duplicated between the price-change and P/L displays
+
 ## [0.3.0] - 2026-07-28
 
 ### Changed

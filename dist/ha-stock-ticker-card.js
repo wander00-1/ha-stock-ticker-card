@@ -2,7 +2,7 @@
 
 // ── Pure helpers (module scope so the unit tests can require them) ─────────────
 
-const CARD_VERSION = '0.4.0';
+const CARD_VERSION = '0.4.1';
 
 function fmtPrice(price, currency) {
   if (price === null || isNaN(price)) return '—';
@@ -74,14 +74,20 @@ function buildChart(timestamps, closes, prevClose, purchasePrice) {
   const linePoints = pairs.map((p, i) => `${x(i).toFixed(1)},${y(p.c).toFixed(1)}`).join(' ');
   const areaPoints = `${x(0).toFixed(1)},${(H - pad).toFixed(1)} ${linePoints} ${x(n - 1).toFixed(1)},${(H - pad).toFixed(1)}`;
 
+  // Same stroke-width/dasharray/opacity for both reference lines — only the
+  // colour differs — so that when the two values are close together (e.g.
+  // purchase price near previous close) they read as two clean parallel
+  // lines instead of a jumble of mismatched dash rhythms.
+  const REF_LINE_STYLE = 'stroke-width="1.5" stroke-dasharray="5,4" opacity="0.75"';
+
   const prevY = (prevClose !== null && prevClose !== undefined) ? y(prevClose).toFixed(1) : null;
   const prevLine = prevY !== null
-    ? `<line x1="0" y1="${prevY}" x2="${W}" y2="${prevY}" stroke="var(--secondary-text-color, #888)" stroke-width="1" stroke-dasharray="5,4" opacity="0.6"/>`
+    ? `<line x1="0" y1="${prevY}" x2="${W}" y2="${prevY}" stroke="var(--secondary-text-color, #888)" ${REF_LINE_STYLE}/>`
     : '';
 
   const purchaseY = hasPurchase ? y(purchasePrice).toFixed(1) : null;
   const purchaseLine = purchaseY !== null
-    ? `<line x1="0" y1="${purchaseY}" x2="${W}" y2="${purchaseY}" stroke="var(--primary-color, #7c4dff)" stroke-width="1.5" stroke-dasharray="2,3" opacity="0.8"/>`
+    ? `<line x1="0" y1="${purchaseY}" x2="${W}" y2="${purchaseY}" stroke="var(--primary-color, #7c4dff)" ${REF_LINE_STYLE}/>`
     : '';
 
   return `

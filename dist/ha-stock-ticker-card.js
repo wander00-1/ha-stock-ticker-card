@@ -2,7 +2,7 @@
 
 // ── Pure helpers (module scope so the unit tests can require them) ─────────────
 
-const CARD_VERSION = '0.4.1';
+const CARD_VERSION = '0.5.0';
 
 function fmtPrice(price, currency) {
   if (price === null || isNaN(price)) return '—';
@@ -156,8 +156,12 @@ function buildBackContent(d) {
   const dir = dirOf(d.change);
   const changeStr = fmtChange(d.change, d.pct || 0);
   const asOfStr = d.asOf ? d.asOf.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-  const prevCloseStr = d.prevClose !== undefined ? fmtPrice(d.prevClose, d.currency) : '';
-  const yourPriceStr = d.hasHolding ? ` · Your price ${fmtPrice(d.purchasePrice, d.currency)}` : '';
+  const prevCloseStr = d.prevClose !== undefined
+    ? ` · <span class="ref-prev">Prev close ${fmtPrice(d.prevClose, d.currency)}</span>`
+    : '';
+  const yourPriceStr = d.hasHolding
+    ? ` · <span class="ref-purchase">Your price ${fmtPrice(d.purchasePrice, d.currency)}</span>`
+    : '';
   const costBreakdown = d.hasHolding
     ? `<div class="stock-chart-meta">Cost: ${fmtMoney(d.shares * d.purchasePrice, d.currency)}${d.brokerageFee ? ` + ${fmtMoney(d.brokerageFee, d.currency)} brokerage` : ''} = ${fmtMoney(d.costBasis, d.currency)} · Now: ${fmtMoney(d.currentValue, d.currency)}</div>`
     : '';
@@ -168,7 +172,7 @@ function buildBackContent(d) {
   <span class="stock-change ${dir}"><span class="trend-icon">${trendIcon(dir)}</span> ${changeStr}</span>
 </div>
 ${buildChart(d.timestamps, d.closes, d.prevClose, d.hasHolding ? d.purchasePrice : null)}
-<div class="stock-chart-meta">${asOfStr ? `As of ${asOfStr}` : ''}${prevCloseStr ? ` · Prev close ${prevCloseStr}` : ''}${yourPriceStr}</div>
+<div class="stock-chart-meta">${asOfStr ? `As of ${asOfStr}` : ''}${prevCloseStr}${yourPriceStr}</div>
 ${costBreakdown}`;
 }
 
@@ -239,7 +243,8 @@ function buildPortfolioSummary(stocks, hass) {
   <div class="portfolio-row"><span>Invested</span><span>${fmtMoney(totalCost, currency)}</span></div>
   <div class="portfolio-row"><span>Current value</span><span>${fmtMoney(totalValue, currency)}</span></div>
   <div class="portfolio-row total ${dir}"><span>Movement</span><span>${fmtPL(pl, pct, currency)}</span></div>
-</div>`;
+</div>
+<div class="portfolio-divider"></div>`;
 }
 
 const STYLES = `
@@ -357,11 +362,18 @@ const STYLES = `
     color: var(--secondary-text-color);
     text-align: right;
   }
+  .ref-prev { color: var(--secondary-text-color, #888); }
+  .ref-purchase { color: var(--primary-color, #7c4dff); }
   .portfolio-summary {
     margin: 4px 16px 12px;
     padding: 10px 14px;
     border-radius: 8px;
     background: var(--secondary-background-color, rgba(0,0,0,0.03));
+  }
+  .portfolio-divider {
+    height: 1px;
+    margin: 0 16px 8px;
+    background: var(--divider-color, rgba(0,0,0,0.12));
   }
   .portfolio-row {
     display: flex;

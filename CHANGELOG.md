@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-07-28
+
+### Added
+- Visual divider between the portfolio summary box and the stock list below
+  it
+- "Prev close" and "Your price" labels in the chart meta line are now
+  coloured to match their corresponding reference line (grey / theme accent),
+  making the connection between line and label explicit
+
 ## [0.4.1] - 2026-07-28
 
 ### Fixed

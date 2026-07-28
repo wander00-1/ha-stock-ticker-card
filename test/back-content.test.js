@@ -45,3 +45,11 @@ test('buildBackContent: no purchase-price line or "Your price" text for a watchl
   assert.doesNotMatch(html, /--primary-color/);
   assert.doesNotMatch(html, /Your price/);
 });
+
+test('buildBackContent: "Prev close" and "Your price" labels are wrapped so they can be coloured to match their reference lines', () => {
+  const hass = makeHass('sensor.dro', { meta: { symbol: 'DRO.AX', previousClose: 2.0 } });
+  const d = readStockData({ entity: 'sensor.dro', shares: 250, purchase_price: 1.85 }, hass);
+  const html = buildBackContent(d);
+  assert.match(html, /ref-prev">Prev close/);
+  assert.match(html, /ref-purchase">Your price/);
+});

@@ -40,3 +40,15 @@ test('buildPortfolioSummary: an unavailable sensor with holding fields configure
   const html = buildPortfolioSummary([{ entity: 'sensor.dro', shares: 250, purchase_price: 2.04 }], hass);
   assert.equal(html, '');
 });
+
+test('buildPortfolioSummary: includes a divider after the summary box when it renders', () => {
+  const hass = makeHass({ 'sensor.dro': { state: '2.08' } });
+  const html = buildPortfolioSummary([{ entity: 'sensor.dro', shares: 250, purchase_price: 2.04 }], hass);
+  assert.match(html, /portfolio-divider/);
+});
+
+test('buildPortfolioSummary: no divider when there is nothing to show', () => {
+  const hass = makeHass({ 'sensor.dro': { state: '2.08' } });
+  const html = buildPortfolioSummary([{ entity: 'sensor.dro' }], hass);
+  assert.doesNotMatch(html, /portfolio-divider/);
+});

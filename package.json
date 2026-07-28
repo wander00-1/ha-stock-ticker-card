@@ -1,6 +1,6 @@
 {
   "name": "ha-stock-ticker-card",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Home Assistant Lovelace stock ticker card",
   "private": true,
   "scripts": {

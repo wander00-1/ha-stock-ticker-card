@@ -91,15 +91,27 @@ a single currency across all holdings (fine for an ASX-only portfolio).
 
 ## Behaviour
 
-- Tap a stock row to expand/collapse its intraday chart
-- Price change and % change (vs previous close) shown in green (up), red
-  (down), or grey (flat)
+- Tap a stock row to flip it between its price view and its intraday chart
+  — rows are a fixed height so the two views crossfade in place rather than
+  the chart dropping down and pushing other rows around
+- Trend icon (▲/▼/–) and price change / % change (vs previous close) shown
+  in green (up), red (down), or grey (flat)
+- Small "Updated HH:MM" timestamp in the bottom-left of each row
 - Dashed reference line in the chart marks the previous close
 - Card colours follow the active HA theme; override the up/down colours with
   `--stock-up-color`/`--stock-down-color` CSS variables in your theme if
   desired
 
 ---
+
+## Testing
+
+```
+npm test
+```
+
+Runs the Node test-runner suite in `test/` — pure formatting, P/L, and chart
+logic, no browser or Home Assistant instance required.
 
 ## Contributing
 

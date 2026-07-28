@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-07-28
+
+### Changed
+- Tapping a stock row now flips it (crossfade between price view and chart
+  view) instead of dropping the chart down below the row — same interaction
+  as `ha-air-quality-card`'s tiles. Rows are now a fixed height at all times
+  to leave room for the chart to fade in, rather than growing on expand
+- Click handling now keys off each row's `data-index` instead of positional
+  order in the DOM, fixing a latent mismatch that could toggle the wrong
+  stock if an earlier stock's sensor was unavailable
+
+### Added
+- Small trend icon (▲/▼/–) next to the daily change, colour-matched to
+  up/down/flat
+- "Updated HH:MM" shown in small text at the bottom-left of each row
+- Unit test suite (`test/`, run via `npm test`) covering formatting helpers,
+  P/L math, chart edge cases, and editor schema integrity. The pure logic is
+  no longer wrapped in an IIFE, so `dist/ha-stock-ticker-card.js` can be
+  `require()`'d directly under Node — the browser-only class definitions and
+  `customElements` registration are now guarded behind a
+  `typeof HTMLElement !== 'undefined'` check instead
+
 ## [0.2.2] - 2026-07-28
 
 ### Fixed

@@ -78,10 +78,22 @@ test('fmtPL: omits the percentage when pct is null', () => {
 
 // ── trendIcon ─────────────────────────────────────────────────────────────────
 
-test('trendIcon: up/down/flat map to distinct icons', () => {
-  assert.equal(trendIcon('up'), '▲');
-  assert.equal(trendIcon('down'), '▼');
-  assert.equal(trendIcon('flat'), '–');
+test('trendIcon: returns an inline SVG for up/down/flat, each with a distinct path', () => {
+  const up = trendIcon('up');
+  const down = trendIcon('down');
+  const flat = trendIcon('flat');
+  for (const svg of [up, down, flat]) {
+    assert.match(svg, /<svg/);
+    assert.match(svg, /stroke="currentColor"/, 'should inherit colour from the surrounding text');
+  }
+  assert.notEqual(up, down);
+  assert.notEqual(up, flat);
+  assert.notEqual(down, flat);
+});
+
+test('trendIcon: unknown/missing direction falls back to the flat icon', () => {
+  assert.equal(trendIcon('nonsense'), trendIcon('flat'));
+  assert.equal(trendIcon(undefined), trendIcon('flat'));
 });
 
 // ── dirOf ─────────────────────────────────────────────────────────────────────

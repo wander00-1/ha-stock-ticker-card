@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-07-28
+
+### Changed
+- Trend icon replaced with a small inline SVG diagonal arrow (shaft +
+  arrowhead) instead of a plain ▲/▼/– character, closer to a typical stock
+  chart uptick/downtick icon. Coloured via `currentColor` so it still
+  automatically matches the up/down/flat text colour
+
 ## [0.7.0] - 2026-07-28
 
 ### Added

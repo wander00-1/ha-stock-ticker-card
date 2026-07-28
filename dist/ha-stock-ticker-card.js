@@ -2,7 +2,7 @@
 
 // ── Pure helpers (module scope so the unit tests can require them) ─────────────
 
-const CARD_VERSION = '0.7.0';
+const CARD_VERSION = '0.7.1';
 
 function fmtPrice(price, currency) {
   if (price === null || isNaN(price)) return '—';
@@ -30,8 +30,18 @@ function fmtPL(amount, pct, currency) {
   return `${sign}${fmtMoney(amount, currency)}${pctStr}`;
 }
 
+const TREND_ICON_PATHS = {
+  // Diagonal arrow (shaft + arrowhead), like a stock-chart uptick/downtick
+  // rather than a plain triangle glyph. Coloured via currentColor so it
+  // always matches the up/down/flat text colour it sits next to.
+  up: '<path d="M2 12 L8 6 L14 2"/><path d="M9 2 L14 2 L14 7"/>',
+  down: '<path d="M2 4 L8 10 L14 14"/><path d="M9 14 L14 14 L14 9"/>',
+  flat: '<path d="M2 8 L14 8"/><path d="M10 4 L14 8 L10 12"/>',
+};
+
 function trendIcon(dir) {
-  return dir === 'up' ? '▲' : dir === 'down' ? '▼' : '–';
+  const paths = TREND_ICON_PATHS[dir] || TREND_ICON_PATHS.flat;
+  return `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
 }
 
 function dirOf(value) {
@@ -370,7 +380,12 @@ const STYLES = `
   .stock-change.up { color: var(--stock-up-color, #2fbf4f); }
   .stock-change.down { color: var(--stock-down-color, #e64848); }
   .stock-change.flat { color: var(--secondary-text-color, #888); }
-  .trend-icon { font-size: 0.9em; }
+  .trend-icon {
+    display: inline-flex;
+    vertical-align: middle;
+    margin-top: -2px;
+  }
+  .trend-icon svg { width: 12px; height: 12px; display: block; }
   .stock-holding {
     margin-top: 4px;
     font-size: 0.72em;

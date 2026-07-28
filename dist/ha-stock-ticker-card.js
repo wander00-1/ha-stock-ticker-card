@@ -2,7 +2,7 @@
 
 // ── Pure helpers (module scope so the unit tests can require them) ─────────────
 
-const CARD_VERSION = '0.7.1';
+const CARD_VERSION = '0.8.0';
 
 function fmtPrice(price, currency) {
   if (price === null || isNaN(price)) return '—';
@@ -54,6 +54,37 @@ function logoUrl(ticker) {
   // this specific image route, and 404s cleanly for unknown symbols instead
   // of returning a misleading placeholder.
   return ticker ? `https://financialmodelingprep.com/image-stock/${encodeURIComponent(ticker)}.png` : '';
+}
+
+// Logo cache: ticker -> data URI (loaded) | null (confirmed no logo exists).
+// Module-level and shared by every card instance on the page, so a ticker's
+// logo is ever fetched once per page session, not once per card per render.
+// Stays empty (and unused) under Node — only the browser-only card class
+// below ever populates or reads it via cacheLogo()/_loadLogos().
+const logoCache = new Map();
+const logoFetches = new Map(); // ticker -> in-flight Promise, de-dupes concurrent requests
+
+function cacheLogo(ticker) {
+  if (logoCache.has(ticker)) return Promise.resolve(logoCache.get(ticker));
+  if (logoFetches.has(ticker)) return logoFetches.get(ticker);
+
+  const promise = fetch(logoUrl(ticker))
+    .then(resp => {
+      if (!resp.ok) throw new Error('no logo for ticker');
+      return resp.blob();
+    })
+    .then(blob => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    }))
+    .then(dataUri => { logoCache.set(ticker, dataUri); return dataUri; })
+    .catch(() => { logoCache.set(ticker, null); return null; })
+    .finally(() => { logoFetches.delete(ticker); });
+
+  logoFetches.set(ticker, promise);
+  return promise;
 }
 
 function buildChart(timestamps, closes, prevClose, purchasePrice) {
@@ -223,9 +254,20 @@ function buildRow(stock, index, hass, expanded, showLogos) {
     <div class="stock-pl ${plDir}">${fmtPL(d.plAmount, d.plPct, d.currency)}</div>`
     : '';
 
-  const logo = (showLogos && logoUrl(d.ticker))
-    ? `<img class="stock-logo" src="${logoUrl(d.ticker)}" alt="" loading="lazy" onerror="this.remove()"/>`
-    : '';
+  // Never render <img src="remote-url"> directly — that would re-request it
+  // on every hass update. Once cacheLogo() has resolved a ticker (data URI or
+  // confirmed-missing), reuse that result with no network activity at all;
+  // until then, render an empty same-sized placeholder for _loadLogos() to
+  // fill in asynchronously (see the card class below).
+  let logo = '';
+  if (showLogos && d.ticker) {
+    const cached = logoCache.get(d.ticker);
+    if (cached) {
+      logo = `<img class="stock-logo" src="${cached}" alt=""/>`;
+    } else if (cached !== null) {
+      logo = `<span class="stock-logo stock-logo-slot" data-ticker="${d.ticker}"></span>`;
+    }
+  }
 
   return `
 <div class="stock-row" data-index="${index}">
@@ -344,6 +386,7 @@ const STYLES = `
   }
   .stock-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
   .stock-logo {
+    display: inline-block;
     width: 32px;
     height: 32px;
     border-radius: 6px;
@@ -652,6 +695,23 @@ if (typeof HTMLElement !== 'undefined') {
           ? buildPortfolioSummary(this._config.stocks, this._hass)
           : '';
       }
+
+      this._loadLogos();
+    }
+
+    _loadLogos() {
+      this.shadowRoot.querySelectorAll('.stock-logo-slot[data-ticker]').forEach(slot => {
+        const ticker = slot.dataset.ticker;
+        if (!ticker) return;
+        cacheLogo(ticker).then(dataUri => {
+          if (!dataUri) return;
+          // Re-query at resolve time — _update() may have re-rendered (or
+          // this row may have flipped/collapsed) since the fetch started.
+          this.shadowRoot.querySelectorAll(`.stock-logo-slot[data-ticker="${ticker}"]`).forEach(s => {
+            s.outerHTML = `<img class="stock-logo" src="${dataUri}" alt=""/>`;
+          });
+        });
+      });
     }
 
     _toggleExpand(index) {
@@ -700,7 +760,7 @@ if (typeof HTMLElement !== 'undefined') {
 // the browser ES-module context, so this is a no-op there.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    fmtPrice, fmtChange, fmtMoney, fmtPL, trendIcon, dirOf, logoUrl, buildChart,
+    fmtPrice, fmtChange, fmtMoney, fmtPL, trendIcon, dirOf, logoUrl, logoCache, buildChart,
     readStockData, buildBackContent, buildRow, buildPortfolioSummary,
     TITLE_SCHEMA, STOCK_SCHEMA,
   };

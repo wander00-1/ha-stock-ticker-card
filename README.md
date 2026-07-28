@@ -101,7 +101,9 @@ a single currency across all holdings (fine for an ASX-only portfolio).
 - Small "Updated HH:MM" timestamp in the bottom-left of each row
 - Company logo next to the symbol/name (disable with `show_logos: false`).
   Loaded client-side from a third party keyed on the ticker — that service
-  sees which tickers you view if enabled
+  sees which tickers you view if enabled. Fetched once per ticker per page
+  session (cached as a data URI and shared across every card instance on the
+  page), not re-requested on every price refresh
 - The chart view shows the stock's symbol and a colour-coded trend badge at
   the top, so it's clear which stock and which direction you're looking at
 - Dashed reference line in the chart marks the previous close; a second,

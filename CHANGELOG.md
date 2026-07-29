@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-07-29
+
+### Added
+- Editor row labels now update from "Stock N" to the sensor's resolved
+  company name (or HA friendly name, or your `name` override) as soon as a
+  price sensor is selected, instead of staying generic forever
+- `shares`/`purchase_price`/`brokerage_fee` moved behind a ⚙ button per row,
+  collapsed by default; auto-expands for a stock that already has any of
+  them set. `STOCK_SCHEMA` (name/entity) and the new `STOCK_ADVANCED_SCHEMA`
+  (shares/purchase_price/brokerage_fee) are separate exports now
+
+## [0.10.0] - 2026-07-29
+
+### Changed
+- The chart line is now coloured per-pixel by whether it's above or below
+  the previous close, instead of one flat colour for the whole line based
+  on the current day's overall direction. A dip below the reference now
+  shows red even on an otherwise up day, and vice versa. Implemented as a
+  vertical SVG gradient with a hard colour stop at the reference price's
+  position — no line-segment splitting needed. When previous close isn't
+  available, falls back to the first point in the chart, same as before.
+
 ## [0.9.0] - 2026-07-28
 
 ### Added

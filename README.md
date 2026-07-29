@@ -75,6 +75,15 @@ shaped like Yahoo Finance's chart API response — both the
 [ha-stock-ticker integration](https://github.com/wander00-1/ha-stock-ticker)
 and the manual `rest` sensor documented there produce this shape.
 
+### Visual editor
+
+Each stock's row in the editor is labelled "Stock N" until you pick a price
+sensor, then relabels itself using that sensor's company name (or its HA
+friendly name if the sensor doesn't expose one) — or your `name` override, if
+set. `shares`/`purchase_price`/`brokerage_fee` are tucked behind the ⚙ button
+on each row, collapsed by default; it opens automatically for a stock that
+already has any of those set.
+
 ### Profit/loss and portfolio movement
 
 When both `shares` and `purchase_price` are set for a stock:
@@ -111,6 +120,10 @@ a single currency across all holdings (fine for an ASX-only portfolio).
 - Dashed reference line in the chart marks the previous close; a second,
   differently-coloured dashed line marks your purchase price when the stock
   has `shares`/`purchase_price` set
+- The chart line itself is coloured per-pixel by whether it's above or below
+  the previous close (or the first point of the day if unavailable) — a dip
+  below the reference shows red even on an otherwise up day, not just one
+  flat colour for the whole line
 - Card colours follow the active HA theme; override the up/down colours with
   `--stock-up-color`/`--stock-down-color` CSS variables in your theme if
   desired

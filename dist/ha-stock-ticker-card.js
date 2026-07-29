@@ -2,7 +2,7 @@
 
 // ── Pure helpers (module scope so the unit tests can require them) ─────────────
 
-const CARD_VERSION = '0.9.0';
+const CARD_VERSION = '0.11.0';
 
 function fmtPrice(price, currency) {
   if (price === null || isNaN(price)) return '—';
@@ -95,6 +95,10 @@ function cacheLogo(ticker) {
   return promise;
 }
 
+// Each chart needs a unique gradient id (SVG ids must be unique within a
+// shadow root, and more than one row's chart can be flipped open at once).
+let chartIdSeq = 0;
+
 function buildChart(timestamps, closes, prevClose, purchasePrice) {
   const W = 600, H = 140, pad = 6;
   const pairs = (timestamps || [])
@@ -125,8 +129,20 @@ function buildChart(timestamps, closes, prevClose, purchasePrice) {
   const x = i => pad + (i / (n - 1)) * (W - pad * 2);
   const y = v => H - pad - ((v - min) / rangeY) * (H - pad * 2);
 
-  const isUp = pairs[n - 1].c >= (prevClose !== null && prevClose !== undefined ? prevClose : pairs[0].c);
-  const color = isUp ? 'var(--stock-up-color, #2fbf4f)' : 'var(--stock-down-color, #e64848)';
+  // Colour the line per-pixel by where it sits relative to the same
+  // reference used for the day's up/down badge (previous close, or the
+  // first point if unavailable), rather than one flat colour for the whole
+  // line. A vertical gradient with a hard stop at that price does this
+  // without needing to split the line into segments.
+  const colorRef = (prevClose !== null && prevClose !== undefined) ? prevClose : pairs[0].c;
+  const refOffset = Math.min(1, Math.max(0, y(colorRef) / H)).toFixed(4);
+  const gradientId = `stock-chart-grad-${chartIdSeq++}`;
+  const strokeColor = `url(#${gradientId})`;
+  const gradient = `
+<linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="${H}" gradientUnits="userSpaceOnUse">
+  <stop offset="${refOffset}" stop-color="var(--stock-up-color, #2fbf4f)"/>
+  <stop offset="${refOffset}" stop-color="var(--stock-down-color, #e64848)"/>
+</linearGradient>`;
 
   const linePoints = pairs.map((p, i) => `${x(i).toFixed(1)},${y(p.c).toFixed(1)}`).join(' ');
   const areaPoints = `${x(0).toFixed(1)},${(H - pad).toFixed(1)} ${linePoints} ${x(n - 1).toFixed(1)},${(H - pad).toFixed(1)}`;
@@ -149,10 +165,11 @@ function buildChart(timestamps, closes, prevClose, purchasePrice) {
 
   return `
 <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="stock-chart-svg">
+  <defs>${gradient}</defs>
   ${prevLine}
   ${purchaseLine}
-  <polyline points="${areaPoints}" fill="${color}" fill-opacity="0.12" stroke="none"/>
-  <polyline points="${linePoints}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <polyline points="${areaPoints}" fill="${strokeColor}" fill-opacity="0.12" stroke="none"/>
+  <polyline points="${linePoints}" fill="none" stroke="${strokeColor}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
 </svg>`;
 }
 
@@ -529,17 +546,29 @@ const EDITOR_STYLES = `
     font-weight: 500;
     color: var(--primary-text-color);
     margin-bottom: 4px;
+    gap: 8px;
   }
-  .remove-btn {
+  .row-header span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row-header-btns { display: flex; gap: 2px; flex-shrink: 0; }
+  .icon-btn {
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--error-color, #f44336);
     font-size: 0.85em;
     padding: 4px 8px;
     border-radius: 4px;
+    color: var(--secondary-text-color);
   }
+  .settings-btn { font-size: 1em; }
+  .settings-btn:hover { background: var(--divider-color, rgba(0,0,0,0.12)); }
+  .settings-btn.active { color: var(--primary-color, #1976d2); }
+  .remove-btn { color: var(--error-color, #f44336); }
   .remove-btn:hover { background: var(--error-color, #f44336); color: white; }
+  .stock-advanced {
+    border-top: 1px solid var(--divider-color, rgba(0,0,0,0.12));
+    margin-top: 8px;
+    padding-top: 8px;
+  }
   .add-row { margin-top: 8px; display: flex; justify-content: flex-end; }
 `;
 
@@ -552,6 +581,9 @@ const TITLE_SCHEMA = [
 const STOCK_SCHEMA = [
   { name: 'name', label: 'Display name (optional, overrides company name)', selector: { text: {} } },
   { name: 'entity', label: 'Stock price sensor', selector: { entity: { domain: 'sensor' } } },
+];
+
+const STOCK_ADVANCED_SCHEMA = [
   { name: 'shares', label: 'Shares owned (optional)', selector: { number: { mode: 'box', min: 0, step: 'any' } } },
   { name: 'purchase_price', label: 'Purchase price per share (optional)', selector: { number: { mode: 'box', min: 0, step: 'any' } } },
   { name: 'brokerage_fee', label: 'Brokerage fee paid (optional)', selector: { number: { mode: 'box', min: 0, step: 'any' } } },
@@ -590,6 +622,15 @@ if (typeof HTMLElement !== 'undefined') {
       }));
     }
 
+    _resolveStockLabel(stock, i) {
+      const state = this._hass && stock.entity ? this._hass.states[stock.entity] : null;
+      return stock.name
+        || state?.attributes?.meta?.longName
+        || state?.attributes?.friendly_name
+        || stock.entity
+        || `Stock ${i + 1}`;
+    }
+
     _render() {
       const shadow = this.shadowRoot;
       shadow.innerHTML = `<style>${EDITOR_STYLES}</style>`;
@@ -616,35 +657,69 @@ if (typeof HTMLElement !== 'undefined') {
         const header = document.createElement('div');
         header.className = 'row-header';
         const label = document.createElement('span');
-        label.textContent = `Stock ${i + 1}`;
+        label.textContent = this._resolveStockLabel(stock, i);
+
+        const headerBtns = document.createElement('div');
+        headerBtns.className = 'row-header-btns';
+
+        const hasAdvanced = stock.shares != null || stock.purchase_price != null || stock.brokerage_fee != null;
+        const settingsBtn = document.createElement('button');
+        settingsBtn.className = `icon-btn settings-btn${hasAdvanced ? ' active' : ''}`;
+        settingsBtn.title = 'Optional settings (shares, purchase price, brokerage fee)';
+        settingsBtn.textContent = '⚙';
+
         const removeBtn = document.createElement('button');
-        removeBtn.className = 'remove-btn';
+        removeBtn.className = 'icon-btn remove-btn';
         removeBtn.textContent = 'Remove';
         removeBtn.addEventListener('click', () => {
           this._config.stocks.splice(i, 1);
           this._fire();
           this._render();
         });
+
+        headerBtns.appendChild(settingsBtn);
+        headerBtns.appendChild(removeBtn);
         header.appendChild(label);
-        header.appendChild(removeBtn);
+        header.appendChild(headerBtns);
         row.appendChild(header);
 
         const form = document.createElement('ha-form');
         form.hass = this._hass;
-        form.data = {
-          name: stock.name || '',
-          entity: stock.entity || '',
-          shares: stock.shares ?? null,
-          purchase_price: stock.purchase_price ?? null,
-          brokerage_fee: stock.brokerage_fee ?? null,
-        };
+        form.data = { name: stock.name || '', entity: stock.entity || '' };
         form.schema = STOCK_SCHEMA;
         form.computeLabel = s => s.label || s.name;
         form.addEventListener('value-changed', e => {
           this._config.stocks[i] = { ...this._config.stocks[i], ...e.detail.value };
+          label.textContent = this._resolveStockLabel(this._config.stocks[i], i);
           this._fire();
         });
         row.appendChild(form);
+
+        const advancedWrap = document.createElement('div');
+        advancedWrap.className = 'stock-advanced';
+        advancedWrap.style.display = hasAdvanced ? '' : 'none';
+        settingsBtn.addEventListener('click', () => {
+          const showing = advancedWrap.style.display !== 'none';
+          advancedWrap.style.display = showing ? 'none' : '';
+          settingsBtn.classList.toggle('active', !showing);
+        });
+
+        const advForm = document.createElement('ha-form');
+        advForm.hass = this._hass;
+        advForm.data = {
+          shares: stock.shares ?? null,
+          purchase_price: stock.purchase_price ?? null,
+          brokerage_fee: stock.brokerage_fee ?? null,
+        };
+        advForm.schema = STOCK_ADVANCED_SCHEMA;
+        advForm.computeLabel = s => s.label || s.name;
+        advForm.addEventListener('value-changed', e => {
+          this._config.stocks[i] = { ...this._config.stocks[i], ...e.detail.value };
+          this._fire();
+        });
+        advancedWrap.appendChild(advForm);
+        row.appendChild(advancedWrap);
+
         shadow.appendChild(row);
       });
 
@@ -792,6 +867,6 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     fmtPrice, fmtChange, fmtMoney, fmtPL, fmtVolume, trendIcon, dirOf, logoUrl, logoCache, buildChart,
     readStockData, buildBackContent, buildRow, buildPortfolioSummary,
-    TITLE_SCHEMA, STOCK_SCHEMA,
+    TITLE_SCHEMA, STOCK_SCHEMA, STOCK_ADVANCED_SCHEMA,
   };
 }

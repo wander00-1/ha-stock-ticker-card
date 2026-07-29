@@ -58,3 +58,39 @@ test('buildPortfolioSummary: no divider when there is nothing to show', () => {
   const html = buildPortfolioSummary([{ entity: 'sensor.dro' }], hass);
   assert.doesNotMatch(html, /portfolio-divider/);
 });
+
+// ── free shares (no purchase price) ──────────────────────────────────────────
+
+test('buildPortfolioSummary: shares with no purchase price still contribute their current value to the totals', () => {
+  const hass = makeHass({
+    'sensor.dro': { state: '2.08' },   // 250 sh, cost 510, value 520
+    'sensor.rhc': { state: '44.26' },  // 74 sh, no purchase price, cost 0, value 3275.24
+  });
+  const stocks = [
+    { entity: 'sensor.dro', shares: 250, purchase_price: 2.04 },
+    { entity: 'sensor.rhc', shares: 74 },
+  ];
+  const html = buildPortfolioSummary(stocks, hass);
+  assert.match(html, /\$510\.00/); // invested: only the costed stock
+  assert.match(html, /\$3795\.24/); // current value: both (520 + 3275.24)
+});
+
+test('buildPortfolioSummary: Movement % is computed only from stocks with a real purchase price, not blended with free shares', () => {
+  const hass = makeHass({
+    'sensor.dro': { state: '2.08' },   // 250 sh @ 2.04 -> cost 510, value 520, +1.96%
+    'sensor.rhc': { state: '44.26' },  // 74 sh, no cost -> would otherwise blow up the ratio
+  });
+  const stocks = [
+    { entity: 'sensor.dro', shares: 250, purchase_price: 2.04 },
+    { entity: 'sensor.rhc', shares: 74 },
+  ];
+  const html = buildPortfolioSummary(stocks, hass);
+  assert.match(html, /\+1\.96%/, 'expected the % to reflect only the DRO position, not a figure inflated by the free RHC shares');
+  assert.doesNotMatch(html, /617/, 'the blended (misleading) percentage must not appear');
+});
+
+test('buildPortfolioSummary: no Movement % at all when every holding is free shares', () => {
+  const hass = makeHass({ 'sensor.rhc': { state: '44.26' } });
+  const html = buildPortfolioSummary([{ entity: 'sensor.rhc', shares: 74 }], hass);
+  assert.doesNotMatch(html, /%/);
+});

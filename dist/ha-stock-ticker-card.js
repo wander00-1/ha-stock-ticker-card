@@ -2,7 +2,7 @@
 
 // ── Pure helpers (module scope so the unit tests can require them) ─────────────
 
-const CARD_VERSION = '0.11.0';
+const CARD_VERSION = '0.12.0';
 
 function fmtPrice(price, currency) {
   if (price === null || isNaN(price)) return '—';
@@ -191,11 +191,15 @@ function readStockData(stock, hass) {
   const shares = parseFloat(stock.shares);
   const purchasePrice = parseFloat(stock.purchase_price);
   const brokerageFee = parseFloat(stock.brokerage_fee) || 0;
-  const hasHolding = !isNaN(shares) && shares > 0 && !isNaN(purchasePrice);
+  const hasPurchasePrice = !isNaN(purchasePrice);
+  // Shares alone are enough to count as a holding (e.g. received via a
+  // dividend reinvestment plan or gift, never bought) — purchase_price only
+  // adds a cost basis for P/L when it's actually known.
+  const hasHolding = !isNaN(shares) && shares > 0;
 
   let costBasis = null, currentValue = null, plAmount = null, plPct = null;
   if (hasHolding) {
-    costBasis = shares * purchasePrice + brokerageFee;
+    costBasis = shares * (hasPurchasePrice ? purchasePrice : 0) + brokerageFee;
     if (!isNaN(price)) {
       currentValue = shares * price;
       plAmount = currentValue - costBasis;
@@ -334,6 +338,11 @@ function buildRow(stock, index, hass, expanded, showLogos) {
 
 function buildPortfolioSummary(stocks, hass) {
   let totalCost = 0, totalValue = 0, currency = null, count = 0;
+  // The Movement % is computed only from stocks with a real purchase price —
+  // blending in shares that cost $0 (received free, e.g. via a DRP or gift)
+  // would make the ratio meaningless (e.g. "+617%") even though the dollar
+  // totals above it are perfectly accurate either way.
+  let costedBasis = 0, costedPl = 0, hasCostedStock = false;
   stocks.forEach(s => {
     const d = readStockData(s, hass);
     if (d.hasHolding && d.currentValue !== null) {
@@ -341,12 +350,17 @@ function buildPortfolioSummary(stocks, hass) {
       totalValue += d.currentValue;
       currency = currency || d.currency;
       count++;
+      if (!isNaN(d.purchasePrice)) {
+        hasCostedStock = true;
+        costedBasis += d.costBasis;
+        costedPl += d.plAmount;
+      }
     }
   });
   if (count === 0) return '';
 
   const pl = totalValue - totalCost;
-  const pct = totalCost !== 0 ? (pl / totalCost) * 100 : null;
+  const pct = (hasCostedStock && costedBasis !== 0) ? (costedPl / costedBasis) * 100 : null;
   const dir = pl > 0 ? 'up' : pl < 0 ? 'down' : 'flat';
 
   return `

@@ -114,10 +114,20 @@ test('readStockData: shares of 0 does not count as a holding', () => {
   assert.equal(d.hasHolding, false);
 });
 
-test('readStockData: shares without purchase_price does not count as a holding', () => {
+test('readStockData: shares without purchase_price still counts as a holding (e.g. shares received for free)', () => {
   const hass = makeHass('sensor.dro', { state: '2.08' });
   const d = readStockData({ entity: 'sensor.dro', shares: 250 }, hass);
-  assert.equal(d.hasHolding, false);
+  assert.equal(d.hasHolding, true);
+  assert.ok(Math.abs(d.costBasis - 0) < 1e-9, 'cost basis should be 0 with no purchase price');
+  assert.ok(Math.abs(d.currentValue - 520) < 1e-9);
+  assert.ok(Math.abs(d.plAmount - 520) < 1e-9, 'P/L should equal the full current value against a $0 cost basis');
+  assert.equal(d.plPct, null, 'percentage is undefined against a $0 cost basis, not shown');
+});
+
+test('readStockData: brokerage_fee alone (no purchase_price) still contributes to cost basis', () => {
+  const hass = makeHass('sensor.dro', { state: '2.08' });
+  const d = readStockData({ entity: 'sensor.dro', shares: 250, brokerage_fee: 9.95 }, hass);
+  assert.ok(Math.abs(d.costBasis - 9.95) < 1e-9);
 });
 
 // ── day range / volume ────────────────────────────────────────────────────────

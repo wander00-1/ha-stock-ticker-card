@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-07-29
+
+### Fixed
+- `shares` without a `purchase_price` (e.g. shares received via a DRP or
+  gift, never bought) were excluded from the portfolio entirely — `shares`
+  alone now counts as a holding, with cost basis treated as $0 (plus any
+  `brokerage_fee`) when no purchase price is set, so the row and portfolio
+  total both reflect its current value.
+- The portfolio's Movement **%** is now computed only from stocks that have
+  a real purchase price. Blending free shares' full current value in as
+  pure "gain" against a near-$0 cost basis produced meaningless, wildly
+  inflated percentages (e.g. "+617%") even though the dollar figures
+  (Invested / Current value / Movement $) were already correct — those
+  still total every holding, only the percentage's inputs changed.
+
 ## [0.11.0] - 2026-07-29
 
 ### Added

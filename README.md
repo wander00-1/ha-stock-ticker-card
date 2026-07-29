@@ -66,8 +66,8 @@ stocks:
 |-----|------|----------|-------------|
 | `name` | string | No | Bold display label — defaults to the sensor's company name (`meta.longName`), with the ticker symbol always shown as a subtitle below it |
 | `entity` | string | Yes | Entity ID of the price sensor for this stock |
-| `shares` | number | No | Number of shares held. Omit to treat the row as watchlist-only (no P/L shown) |
-| `purchase_price` | number | No | Price paid per share. Required alongside `shares` to compute P/L |
+| `shares` | number | No | Number of shares held. Omit to treat the row as watchlist-only (no holding shown). `purchase_price` is optional alongside it — see below |
+| `purchase_price` | number | No | Price paid per share. Omit for shares received without buying them (e.g. a DRP or gift) — cost basis is then treated as $0 (plus any `brokerage_fee`) |
 | `brokerage_fee` | number | No | One-off brokerage fee paid for the purchase, added to cost basis. Defaults to 0 |
 
 The sensor must expose `meta`, `timestamp`, and `indicators` attributes
@@ -86,17 +86,25 @@ already has any of those set.
 
 ### Profit/loss and portfolio movement
 
-When both `shares` and `purchase_price` are set for a stock:
-- Cost basis = `shares × purchase_price + brokerage_fee`
-- The row shows your holding (e.g. `250 sh @ $1.85`) and P/L in $ and %
-  under the price, colour-coded the same as the daily change
+When `shares` is set for a stock (with or without `purchase_price`):
+- Cost basis = `shares × purchase_price + brokerage_fee`, or just
+  `brokerage_fee` (default $0) if `purchase_price` is omitted — e.g. shares
+  received via a dividend reinvestment plan or as a gift, never bought
+- The row shows your holding (e.g. `250 sh @ $1.85`, or `74 sh @ —` with no
+  purchase price) and P/L in $ under the price, colour-coded the same as the
+  daily change. A $ P/L is shown even with a $0 cost basis; the % is omitted
+  in that case since a percentage against nothing invested isn't meaningful
 - Expanding the row's chart also shows a cost/current-value breakdown
 
 The **portfolio summary** (top of the card, unless `show_portfolio: false`)
-totals invested cost, current value, and overall movement across every
-stock that has holding info — stocks without `shares`/`purchase_price` are
-excluded from the totals and behave as plain watchlist rows. Totals assume
-a single currency across all holdings (fine for an ASX-only portfolio).
+totals invested cost and current value across every stock with `shares` set
+— stocks without `shares` at all are excluded and behave as plain watchlist
+rows. The Movement **%** is computed only from stocks that also have a
+`purchase_price`, so shares received for free don't distort the ratio (their
+dollar value still counts toward Invested/Current value/Movement $ — it's
+only the percentage that excludes them). If no stock in the portfolio has a
+purchase price, no percentage is shown at all. Totals assume a single
+currency across all holdings (fine for an ASX-only portfolio).
 
 ---
 

@@ -2,7 +2,7 @@
 
 // ── Pure helpers (module scope so the unit tests can require them) ─────────────
 
-const CARD_VERSION = '0.12.1';
+const CARD_VERSION = '0.13.0';
 
 function fmtPrice(price, currency) {
   if (price === null || isNaN(price)) return '—';
@@ -249,11 +249,14 @@ function buildBackContent(d) {
   const prevCloseStr = d.prevClose !== undefined
     ? ` · <span class="ref-prev">Prev close ${fmtPrice(d.prevClose, d.currency)}</span>`
     : '';
-  const yourPriceStr = d.hasHolding
+  const yourPriceStr = (d.hasHolding && !isNaN(d.purchasePrice))
     ? ` · <span class="ref-purchase">Your price ${fmtPrice(d.purchasePrice, d.currency)}</span>`
     : '';
+  const costLabel = !isNaN(d.purchasePrice)
+    ? `Cost: ${fmtMoney(d.shares * d.purchasePrice, d.currency)}${d.brokerageFee ? ` + ${fmtMoney(d.brokerageFee, d.currency)} brokerage` : ''} = ${fmtMoney(d.costBasis, d.currency)}`
+    : `Cost: ${fmtMoney(d.costBasis, d.currency)}`;
   const costBreakdown = d.hasHolding
-    ? `<div class="stock-chart-meta">Cost: ${fmtMoney(d.shares * d.purchasePrice, d.currency)}${d.brokerageFee ? ` + ${fmtMoney(d.brokerageFee, d.currency)} brokerage` : ''} = ${fmtMoney(d.costBasis, d.currency)} · Now: ${fmtMoney(d.currentValue, d.currency)}</div>`
+    ? `<div class="stock-chart-meta">${costLabel} · Now: ${fmtMoney(d.currentValue, d.currency)}</div>`
     : '';
 
   return `
@@ -286,8 +289,11 @@ function buildRow(stock, index, hass, expanded, showLogos) {
   const updatedStr = d.asOf ? d.asOf.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
   const plDir = dirOf(d.plAmount);
+  const holdingQty = !isNaN(d.purchasePrice)
+    ? `${d.shares} sh @ ${fmtPrice(d.purchasePrice, d.currency)}`
+    : `${d.shares}`;
   const holdingLine = d.hasHolding
-    ? `<div class="stock-holding">${d.shares} sh @ ${fmtPrice(d.purchasePrice, d.currency)}</div>
+    ? `<div class="stock-holding">${holdingQty}</div>
     <div class="stock-pl ${plDir}">${fmtPL(d.plAmount, d.plPct, d.currency)}</div>`
     : '';
 

@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2026-07-29
+
+### Changed
+- Cleaned up display for shares with no purchase price (e.g. free/gifted
+  shares): the holding line now shows just the share count (`17`) instead of
+  `17 sh @ —`, and the chart view's cost breakdown shows `Cost: $0.00` instead
+  of `Cost: — = $0.00`. The "Your price" reference label is also hidden in
+  this case, matching the reference line it describes already being absent.
+
 ## [0.12.1] - 2026-07-29
 
 ### Fixed

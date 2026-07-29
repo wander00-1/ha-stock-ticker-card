@@ -53,3 +53,21 @@ test('buildBackContent: "Prev close" and "Your price" labels are wrapped so they
   assert.match(html, /ref-prev">Prev close/);
   assert.match(html, /ref-purchase">Your price/);
 });
+
+// ── free shares (no purchase price) ──────────────────────────────────────────
+
+test('buildBackContent: no "Your price" line for shares with no purchase price', () => {
+  const hass = makeHass('sensor.dro', { meta: { symbol: 'DRO.AX', previousClose: 2.0 } });
+  const d = readStockData({ entity: 'sensor.dro', shares: 250 }, hass);
+  const html = buildBackContent(d);
+  assert.doesNotMatch(html, /Your price/);
+  assert.doesNotMatch(html, /--primary-color/, 'no purchase price means no purchase-price reference line either');
+});
+
+test('buildBackContent: cost breakdown shows just the $0 cost basis, not "— = $0.00"', () => {
+  const hass = makeHass('sensor.dro', { meta: { symbol: 'DRO.AX', previousClose: 2.0 } });
+  const d = readStockData({ entity: 'sensor.dro', shares: 250 }, hass);
+  const html = buildBackContent(d);
+  assert.match(html, /Cost: \$0\.00 · Now:/);
+  assert.doesNotMatch(html, /—/);
+});

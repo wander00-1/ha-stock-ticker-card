@@ -90,10 +90,11 @@ When `shares` is set for a stock (with or without `purchase_price`):
 - Cost basis = `shares × purchase_price + brokerage_fee`, or just
   `brokerage_fee` (default $0) if `purchase_price` is omitted — e.g. shares
   received via a dividend reinvestment plan or as a gift, never bought
-- The row shows your holding (e.g. `250 sh @ $1.85`, or `74 sh @ —` with no
-  purchase price) and P/L in $ under the price, colour-coded the same as the
-  daily change. A $ P/L is shown even with a $0 cost basis; the % is omitted
-  in that case since a percentage against nothing invested isn't meaningful
+- The row shows your holding (e.g. `250 sh @ $1.85`, or just `74` with no
+  purchase price recorded) and P/L in $ under the price, colour-coded the
+  same as the daily change. A $ P/L is shown even with a $0 cost basis; the
+  % is omitted in that case since a percentage against nothing invested
+  isn't meaningful
 - Expanding the row's chart also shows a cost/current-value breakdown
 
 The **portfolio summary** (top of the card, unless `show_portfolio: false`)

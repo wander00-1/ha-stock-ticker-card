@@ -76,3 +76,19 @@ test('buildRow: omits the stats line entirely when day range/volume are absent',
   const html = buildRow({ entity: 'sensor.dro' }, 0, hass, false, false);
   assert.doesNotMatch(html, /stock-stats/);
 });
+
+// ── holding line for shares with no purchase price ───────────────────────────
+
+test('buildRow: shares with a purchase price show the full "N sh @ $price" line', () => {
+  const hass = makeHass('sensor.dro', { state: '2.08' });
+  const html = buildRow({ entity: 'sensor.dro', shares: 17, purchase_price: 2.04 }, 0, hass, false, false);
+  assert.match(html, /stock-holding">17 sh @ \$2\.040</);
+});
+
+test('buildRow: shares with no purchase price show just the share count, not "N sh @ —"', () => {
+  const hass = makeHass('sensor.dro', { state: '2.08' });
+  const html = buildRow({ entity: 'sensor.dro', shares: 17 }, 0, hass, false, false);
+  assert.match(html, /stock-holding">17</);
+  assert.doesNotMatch(html, /sh @/);
+  assert.doesNotMatch(html, /—/);
+});

@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2026-07-29
+
+### Fixed
+- Portfolio Movement's $ and % were both coloured by the dollar amount's
+  sign alone, even though they're now computed from different subsets of
+  stocks (see 0.12.0) and can legitimately disagree — e.g. showing green for
+  the whole "+$686.22 (-12.73%)" when the percentage was actually negative.
+  New `fmtPLSplit` colours each figure independently.
+
+## [0.13.1] - 2026-07-29
+
+### Changed
+- 0.13.0 dropped the "sh" unit along with the unknown "@ price" for shares
+  with no purchase price, showing just the bare number (`17`). Kept "sh"
+  instead (`17 sh`) — bare numbers read as ambiguous, "sh" doesn't cost much
+  space, and it's already the convention for the priced case (`250 sh @ $1.85`).
+
 ## [0.13.0] - 2026-07-29
 
 ### Changed

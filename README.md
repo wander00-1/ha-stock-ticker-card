@@ -90,7 +90,7 @@ When `shares` is set for a stock (with or without `purchase_price`):
 - Cost basis = `shares × purchase_price + brokerage_fee`, or just
   `brokerage_fee` (default $0) if `purchase_price` is omitted — e.g. shares
   received via a dividend reinvestment plan or as a gift, never bought
-- The row shows your holding (e.g. `250 sh @ $1.85`, or just `74` with no
+- The row shows your holding (e.g. `250 sh @ $1.85`, or just `74 sh` with no
   purchase price recorded) and P/L in $ under the price, colour-coded the
   same as the daily change. A $ P/L is shown even with a $0 cost basis; the
   % is omitted in that case since a percentage against nothing invested
@@ -103,8 +103,11 @@ totals invested cost and current value across every stock with `shares` set
 rows. The Movement **%** is computed only from stocks that also have a
 `purchase_price`, so shares received for free don't distort the ratio (their
 dollar value still counts toward Invested/Current value/Movement $ — it's
-only the percentage that excludes them). If no stock in the portfolio has a
-purchase price, no percentage is shown at all. Totals assume a single
+only the percentage that excludes them). Since the $ and % can come from
+different subsets of stocks, they're coloured independently — the dollar
+figure and percentage can legitimately show opposite colours (e.g. up
+overall in $ while the costed stocks are down in %). If no stock in the
+portfolio has a purchase price, no percentage is shown at all. Totals assume a single
 currency across all holdings (fine for an ASX-only portfolio).
 
 ---

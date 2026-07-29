@@ -3,7 +3,7 @@
 const test   = require('node:test');
 const assert = require('node:assert/strict');
 
-const { fmtPrice, fmtChange, fmtMoney, fmtPL, fmtVolume, trendIcon, dirOf, logoUrl } = require('../dist/ha-stock-ticker-card.js');
+const { fmtPrice, fmtChange, fmtMoney, fmtPL, fmtPLSplit, fmtVolume, trendIcon, dirOf, logoUrl } = require('../dist/ha-stock-ticker-card.js');
 
 // ── fmtPrice ──────────────────────────────────────────────────────────────────
 
@@ -82,6 +82,33 @@ test('fmtPL: amount and pct with opposite signs never stack a + in front of a ne
   // overall, pct down for the costed subset, or vice versa.
   assert.equal(fmtPL(686.22, -12.73, 'AUD'), '+$686.22 (-12.73%)');
   assert.equal(fmtPL(-686.22, 12.73, 'AUD'), '-$686.22 (+12.73%)');
+});
+
+// ── fmtPLSplit ────────────────────────────────────────────────────────────────
+
+test('fmtPLSplit: colours the $ and % portions independently when their signs agree', () => {
+  const html = fmtPLSplit(686.22, 12.73, 'AUD');
+  assert.match(html, /color-up">\+\$686\.22</);
+  assert.match(html, /color-up">\(\+12\.73%\)</);
+});
+
+test('fmtPLSplit: colours the $ and % portions independently when their signs disagree', () => {
+  // The exact scenario reported: portfolio up in $ overall, but the costed
+  // subset's % is down - each figure must show its own true colour, not one
+  // shared colour derived from just the dollar amount.
+  const html = fmtPLSplit(686.22, -12.73, 'AUD');
+  assert.match(html, /color-up">\+\$686\.22</);
+  assert.match(html, /color-down">\(-12\.73%\)</);
+});
+
+test('fmtPLSplit: omits the % span entirely when pct is null, no stray parentheses', () => {
+  const html = fmtPLSplit(5, null, 'AUD');
+  assert.match(html, /color-up">\+\$5\.00</);
+  assert.doesNotMatch(html, /\(/);
+});
+
+test('fmtPLSplit: null amount returns empty string', () => {
+  assert.equal(fmtPLSplit(null, null, 'AUD'), '');
 });
 
 // ── trendIcon ─────────────────────────────────────────────────────────────────

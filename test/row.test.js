@@ -85,10 +85,10 @@ test('buildRow: shares with a purchase price show the full "N sh @ $price" line'
   assert.match(html, /stock-holding">17 sh @ \$2\.040</);
 });
 
-test('buildRow: shares with no purchase price show just the share count, not "N sh @ —"', () => {
+test('buildRow: shares with no purchase price show "N sh" without the unknown "@ price" part', () => {
   const hass = makeHass('sensor.dro', { state: '2.08' });
   const html = buildRow({ entity: 'sensor.dro', shares: 17 }, 0, hass, false, false);
-  assert.match(html, /stock-holding">17</);
+  assert.match(html, /stock-holding">17 sh</);
   assert.doesNotMatch(html, /sh @/);
   assert.doesNotMatch(html, /—/);
 });

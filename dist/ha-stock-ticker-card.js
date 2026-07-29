@@ -2,7 +2,7 @@
 
 // ── Pure helpers (module scope so the unit tests can require them) ─────────────
 
-const CARD_VERSION = '0.13.0';
+const CARD_VERSION = '0.14.0';
 
 function fmtPrice(price, currency) {
   if (price === null || isNaN(price)) return '—';
@@ -33,6 +33,22 @@ function fmtPL(amount, pct, currency) {
   const pctSign = (pct !== null && !isNaN(pct) && pct > 0) ? '+' : '';
   const pctStr = pct !== null && !isNaN(pct) ? ` (${pctSign}${pct.toFixed(2)}%)` : '';
   return `${sign}${fmtMoney(amount, currency)}${pctStr}`;
+}
+
+// Like fmtPL, but colours the $ and % portions independently instead of one
+// shared colour for the whole string. For a single stock's own P/L, amount
+// and pct always agree in sign (same cost basis and value), so plain fmtPL
+// is fine there — but the portfolio's Movement % is computed from a
+// different subset of stocks than Movement $ (see buildPortfolioSummary), so
+// they can legitimately disagree, and one shared colour would misrepresent
+// whichever figure doesn't match it.
+function fmtPLSplit(amount, pct, currency) {
+  if (amount === null || isNaN(amount)) return '';
+  const amountStr = `${amount > 0 ? '+' : ''}${fmtMoney(amount, currency)}`;
+  const amountSpan = `<span class="color-${dirOf(amount)}">${amountStr}</span>`;
+  if (pct === null || isNaN(pct)) return amountSpan;
+  const pctStr = `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`;
+  return `${amountSpan} <span class="color-${dirOf(pct)}">(${pctStr})</span>`;
 }
 
 function fmtVolume(v) {
@@ -291,7 +307,7 @@ function buildRow(stock, index, hass, expanded, showLogos) {
   const plDir = dirOf(d.plAmount);
   const holdingQty = !isNaN(d.purchasePrice)
     ? `${d.shares} sh @ ${fmtPrice(d.purchasePrice, d.currency)}`
-    : `${d.shares}`;
+    : `${d.shares} sh`;
   const holdingLine = d.hasHolding
     ? `<div class="stock-holding">${holdingQty}</div>
     <div class="stock-pl ${plDir}">${fmtPL(d.plAmount, d.plPct, d.currency)}</div>`
@@ -372,14 +388,13 @@ function buildPortfolioSummary(stocks, hass) {
 
   const pl = totalValue - totalCost;
   const pct = (hasCostedStock && costedBasis !== 0) ? (costedPl / costedBasis) * 100 : null;
-  const dir = pl > 0 ? 'up' : pl < 0 ? 'down' : 'flat';
 
   return `
 <div class="portfolio-summary">
   <div class="stock-symbol portfolio-title">Portfolio</div>
   <div class="portfolio-row"><span>Invested</span><span>${fmtMoney(totalCost, currency)}</span></div>
   <div class="portfolio-row"><span>Current value</span><span>${fmtMoney(totalValue, currency)}</span></div>
-  <div class="portfolio-row total ${dir}"><span>Movement</span><span>${fmtPL(pl, pct, currency)}</span></div>
+  <div class="portfolio-row total"><span>Movement</span><span>${fmtPLSplit(pl, pct, currency)}</span></div>
 </div>
 <div class="portfolio-divider"></div>`;
 }
@@ -551,9 +566,9 @@ const STYLES = `
     margin-top: 4px;
     padding-top: 6px;
   }
-  .portfolio-row.total.up span:last-child { color: var(--stock-up-color, #2fbf4f); }
-  .portfolio-row.total.down span:last-child { color: var(--stock-down-color, #e64848); }
-  .portfolio-row.total.flat span:last-child { color: var(--secondary-text-color, #888); }
+  .color-up { color: var(--stock-up-color, #2fbf4f); }
+  .color-down { color: var(--stock-down-color, #e64848); }
+  .color-flat { color: var(--secondary-text-color, #888); }
 `;
 
 const EDITOR_STYLES = `
@@ -890,7 +905,7 @@ if (typeof HTMLElement !== 'undefined') {
 // the browser ES-module context, so this is a no-op there.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    fmtPrice, fmtChange, fmtMoney, fmtPL, fmtVolume, trendIcon, dirOf, logoUrl, logoCache, buildChart,
+    fmtPrice, fmtChange, fmtMoney, fmtPL, fmtPLSplit, fmtVolume, trendIcon, dirOf, logoUrl, logoCache, buildChart,
     readStockData, buildBackContent, buildRow, buildPortfolioSummary,
     TITLE_SCHEMA, STOCK_SCHEMA, STOCK_ADVANCED_SCHEMA,
   };

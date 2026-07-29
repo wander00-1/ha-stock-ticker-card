@@ -89,6 +89,23 @@ test('buildPortfolioSummary: Movement % is computed only from stocks with a real
   assert.doesNotMatch(html, /617/, 'the blended (misleading) percentage must not appear');
 });
 
+test('buildPortfolioSummary: Movement $ and % colour independently when they disagree in sign', () => {
+  const hass = makeHass({
+    'sensor.costed': { state: '8.00' }, // 100 sh @ $10 -> cost 1000, value 800, -20%
+    'sensor.free': { state: '20.00' },  // 50 sh, no cost -> value 1000, all gain
+  });
+  const stocks = [
+    { entity: 'sensor.costed', shares: 100, purchase_price: 10 },
+    { entity: 'sensor.free', shares: 50 },
+  ];
+  const html = buildPortfolioSummary(stocks, hass);
+  // Total value 1800 vs total cost 1000 (only the costed stock has one) =
+  // +$800 overall, but the costed-only % is -20% - each must show its own
+  // colour, not one shared colour derived from just the dollar sign.
+  assert.match(html, /color-up">\+\$800\.00</);
+  assert.match(html, /color-down">\(-20\.00%\)</);
+});
+
 test('buildPortfolioSummary: no Movement % at all when every holding is free shares', () => {
   const hass = makeHass({ 'sensor.rhc': { state: '44.26' } });
   const html = buildPortfolioSummary([{ entity: 'sensor.rhc', shares: 74 }], hass);

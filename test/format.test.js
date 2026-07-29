@@ -76,6 +76,14 @@ test('fmtPL: omits the percentage when pct is null', () => {
   assert.equal(fmtPL(5, null, 'AUD'), '+$5.00');
 });
 
+test('fmtPL: amount and pct with opposite signs never stack a + in front of a negative pct', () => {
+  // Can legitimately happen when amount and pct are derived from different
+  // subsets of stocks (see the portfolio Movement % fix) - amount up
+  // overall, pct down for the costed subset, or vice versa.
+  assert.equal(fmtPL(686.22, -12.73, 'AUD'), '+$686.22 (-12.73%)');
+  assert.equal(fmtPL(-686.22, 12.73, 'AUD'), '-$686.22 (+12.73%)');
+});
+
 // ── trendIcon ─────────────────────────────────────────────────────────────────
 
 test('trendIcon: returns an inline SVG for up/down/flat, each with a distinct path', () => {

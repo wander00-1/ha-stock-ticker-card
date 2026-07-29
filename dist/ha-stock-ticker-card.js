@@ -2,7 +2,7 @@
 
 // ── Pure helpers (module scope so the unit tests can require them) ─────────────
 
-const CARD_VERSION = '0.12.0';
+const CARD_VERSION = '0.12.1';
 
 function fmtPrice(price, currency) {
   if (price === null || isNaN(price)) return '—';
@@ -26,7 +26,12 @@ function fmtMoney(amount, currency) {
 function fmtPL(amount, pct, currency) {
   if (amount === null || isNaN(amount)) return '';
   const sign = amount > 0 ? '+' : '';
-  const pctStr = pct !== null && !isNaN(pct) ? ` (${sign}${pct.toFixed(2)}%)` : '';
+  // pct's sign is computed independently of amount's — they can legitimately
+  // differ (e.g. the portfolio's Movement % is computed from a different
+  // subset of stocks than the Movement $), so reusing amount's sign here
+  // could stack a '+' in front of an already-negative pct.toFixed() string.
+  const pctSign = (pct !== null && !isNaN(pct) && pct > 0) ? '+' : '';
+  const pctStr = pct !== null && !isNaN(pct) ? ` (${pctSign}${pct.toFixed(2)}%)` : '';
   return `${sign}${fmtMoney(amount, currency)}${pctStr}`;
 }
 
